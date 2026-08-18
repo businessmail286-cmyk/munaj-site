@@ -1,0 +1,6 @@
+{
+  "name": "MUNAJ",
+  "description": "MUNAJ - Premium Nigerian Food Ordering Customer Platform",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
