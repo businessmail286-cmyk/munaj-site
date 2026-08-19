@@ -21,15 +21,7 @@ import {
   MapPin,
   Camera,
 } from 'lucide-react';
-import {
-  Order,
-  NotificationItem,
-  SupportTicket,
-  SupportMessage,
-  ViewTab,
-  TicketCategory,
-  TicketPriority,
-} from '../types';
+import { Order, ViewTab } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -37,14 +29,12 @@ import { useToast } from '../context/ToastContext';
 import {
   supabase,
   getCustomerOrders,
-  getCustomerTickets,
-  getTicketMessages,
-  createSupportTicket,
-  sendSupportMessage,
   uploadAvatar,
   formatNaira,
   formatPaymentMethodForDisplay,
 } from '../lib/supabase';
+import { CustomerSupport } from '../components/CustomerSupport';
+import { AccountRestrictedBanner } from '../components/AccountRestrictedBanner';
 
 interface AccountViewProps {
   setCurrentTab: (tab: ViewTab) => void;
@@ -63,7 +53,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
 }) => {
   const { user, profile, signOut, updateCustomerProfile } = useAuth();
   const { addItem } = useCart();
-  const { notifications, unreadCount, markAsRead, markAllAsRead, refreshNotifications } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'notifications' | 'support' | 'security'>(
@@ -80,23 +70,6 @@ export const AccountView: React.FC<AccountViewProps> = ({
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
-  // Support Tickets State
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
-  const [ticketMessages, setTicketMessages] = useState<SupportMessage[]>([]);
-  const [newMessageText, setNewMessageText] = useState('');
-  const [sendingMessage, setSendingMessage] = useState(false);
-
-  // New Ticket Form State
-  const [showNewTicketModal, setShowNewTicketModal] = useState(!!prefilledSupportOrder);
-  const [ticketSubject, setTicketSubject] = useState(
-    prefilledSupportOrder ? `Inquiry regarding Order #${prefilledSupportOrder}` : ''
-  );
-  const [ticketCategory, setTicketCategory] = useState<TicketCategory>('Order Issue');
-  const [ticketPriority, setTicketPriority] = useState<TicketPriority>('medium');
-  const [ticketMessage, setTicketMessage] = useState('');
-  const [creatingTicket, setCreatingTicket] = useState(false);
-
   // Load orders
   const loadOrders = async () => {
     if (!user) return;
@@ -111,24 +84,9 @@ export const AccountView: React.FC<AccountViewProps> = ({
     }
   };
 
-  // Load tickets
-  const loadTickets = async () => {
-    if (!user) return;
-    try {
-      const list = await getCustomerTickets(user.id);
-      setTickets(list);
-      if (list.length > 0 && !selectedTicket) {
-        setSelectedTicket(list[0]);
-      }
-    } catch (e) {
-      console.warn('Tickets load error:', e);
-    }
-  };
-
   useEffect(() => {
     if (user) {
       loadOrders();
-      loadTickets();
       if (profile) {
         setFullName(profile.full_name || '');
         setPhone(profile.phone || '');
@@ -136,151 +94,74 @@ export const AccountView: React.FC<AccountViewProps> = ({
     }
   }, [user, profile]);
 
-  // Load messages when selectedTicket changes
-  useEffect(() => {
-    if (!selectedTicket?.id) return;
-
-    getTicketMessages(selectedTicket.id).then((msgs) => {
-      setTicketMessages(msgs);
-    });
-
-    // Realtime subscription for incoming support messages on this ticket
-    const channel = supabase
-      .channel(`public:support_messages:ticket_${selectedTicket.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'support_messages',
-          filter: `ticket_id=eq.${selectedTicket.id}`,
-        },
-        (payload) => {
-          const newMsg = payload.new as SupportMessage;
-          setTicketMessages((prev) => {
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            return [...prev, newMsg];
-          });
-          if (newMsg.sender_id !== user?.id) {
-            showToast('info', 'New Support Reply', newMsg.message);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [selectedTicket?.id, user?.id, showToast]);
-
   if (!user) {
     return (
       <div className="max-w-md mx-auto px-4 py-16 text-center space-y-6">
-        <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+        <div className="w-16 h-16 rounded-3xl bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center mx-auto border border-emerald-200">
           <User className="w-8 h-8" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-neutral-900 font-display">
-            Customer Portal Sign In
+          <h2 className="text-2xl font-extrabold text-[#052E16] font-display">
+            Customer Account
           </h2>
-          <p className="text-xs text-neutral-500">
-            Sign in to your MUNAJ account to view past orders, track live meal deliveries in real-time, and chat with customer support.
+          <p className="text-sm text-neutral-600">
+            Sign in to manage your deliveries, view receipts, and chat live with MUNAJ customer support.
           </p>
         </div>
         <button
           onClick={openAuthModal}
-          className="w-full bg-neutral-900 hover:bg-neutral-800 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition-colors"
+          className="bg-[#16A34A] hover:bg-[#15803D] text-white px-6 py-3.5 rounded-2xl font-bold text-sm shadow-md transition-all inline-flex items-center gap-2 cursor-pointer"
         >
-          Sign In or Register
+          <span>Sign In / Create Account</span>
+          <ArrowRight className="w-4 h-4 text-[#B7FF00]" />
         </button>
       </div>
     );
   }
 
-  // Profile Save
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!fullName.trim()) {
+      showToast('error', 'Validation Error', 'Full name is required.');
+      return;
+    }
+
     setSavingProfile(true);
-    const success = await updateCustomerProfile({
+    const { success, error } = await updateCustomerProfile({
       full_name: fullName.trim(),
       phone: phone.trim(),
     });
+
     if (success) {
-      showToast('success', 'Profile Updated', 'Your profile details have been saved.');
+      showToast('success', 'Profile Updated', 'Your profile details have been saved successfully.');
     } else {
-      showToast('error', 'Update Failed', 'Could not save profile changes.');
+      showToast('error', 'Update Failed', error || 'Failed to update profile.');
     }
     setSavingProfile(false);
   };
 
-  // Avatar Upload
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
     setAvatarUploading(true);
-    const publicUrl = await uploadAvatar(user.id, file);
-    if (publicUrl) {
-      await updateCustomerProfile({ avatar_url: publicUrl });
-      showToast('success', 'Avatar Updated', 'Your new profile photo was uploaded successfully.');
+    const url = await uploadAvatar(user.id, file);
+    if (url) {
+      await updateCustomerProfile({ avatar_url: url });
+      showToast('success', 'Avatar Updated', 'Your profile photo has been updated.');
     } else {
-      showToast('info', 'Notice', 'Avatar upload completed.');
+      showToast('error', 'Upload Failed', 'Failed to upload photo. Please check image size.');
     }
     setAvatarUploading(false);
   };
 
-  // Support Message Send
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedTicket || !newMessageText.trim() || !user) return;
-
-    setSendingMessage(true);
-    const sent = await sendSupportMessage({
-      ticketId: selectedTicket.id,
-      senderId: user.id,
-      message: newMessageText.trim(),
-    });
-
-    if (sent) {
-      setTicketMessages((prev) => [...prev, sent]);
-      setNewMessageText('');
-    } else {
-      showToast('error', 'Failed to send', 'Please check your connection and try again.');
-    }
-    setSendingMessage(false);
-  };
-
-  // Create Ticket
-  const handleCreateTicket = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ticketSubject.trim() || !ticketMessage.trim() || !user) return;
-
-    setCreatingTicket(true);
-    const newTicket = await createSupportTicket({
-      customerId: user.id,
-      customerName: profile?.full_name || 'Customer',
-      customerEmail: user.email || '',
-      subject: ticketSubject.trim(),
-      category: ticketCategory,
-      priority: ticketPriority,
-      initialMessage: ticketMessage.trim(),
-    });
-
-    if (newTicket) {
-      showToast('success', 'Ticket Created', 'Our support team will review your inquiry shortly.');
-      setShowNewTicketModal(false);
-      setTicketSubject('');
-      setTicketMessage('');
-      await loadTickets();
-      setSelectedTicket(newTicket);
-    } else {
-      showToast('error', 'Error', 'Failed to create support ticket. Please try again.');
-    }
-    setCreatingTicket(false);
-  };
-
   // Reorder Action
   const handleReorder = (order: Order) => {
+    if (profile?.status === 'restricted') {
+      showToast('warning', 'Account Restricted', 'Your account currently has restricted access. Placing orders is disabled.');
+      setActiveTab('support');
+      return;
+    }
     if (!order.items || order.items.length === 0) return;
     order.items.forEach((it) => {
       addItem(
@@ -302,10 +183,10 @@ export const AccountView: React.FC<AccountViewProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
       {/* Account Profile Header */}
-      <div className="bg-neutral-900 text-white rounded-3xl p-6 sm:p-8 border border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <div className="bg-gradient-to-br from-[#052E16] via-[#0B3D20] to-[#071A0E] text-white rounded-3xl p-6 sm:p-8 border border-[#16A34A]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
         <div className="flex items-center gap-4">
           <div className="relative group">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 text-white flex items-center justify-center font-extrabold text-2xl shadow-lg border-2 border-neutral-800 overflow-hidden">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#16A34A] to-[#052E16] text-white flex items-center justify-center font-extrabold text-2xl shadow-lg border-2 border-[#B7FF00]/40 overflow-hidden">
               {profile?.avatar_url ? (
                 <img
                   src={profile.avatar_url}
@@ -318,8 +199,8 @@ export const AccountView: React.FC<AccountViewProps> = ({
                 'U'
               )}
             </div>
-            <label className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center cursor-pointer border border-neutral-700 transition-colors">
-              <Camera className="w-3 h-3 text-amber-400" />
+            <label className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#071A0E] hover:bg-[#0B3D20] text-white flex items-center justify-center cursor-pointer border border-[#16A34A]/40 transition-colors">
+              <Camera className="w-3 h-3 text-[#B7FF00]" />
               <input
                 type="file"
                 accept="image/*"
@@ -331,16 +212,27 @@ export const AccountView: React.FC<AccountViewProps> = ({
           </div>
 
           <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl font-extrabold font-display">
-              {profile?.full_name || 'Valued Customer'}
-            </h1>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-400">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-extrabold font-display">
+                {profile?.full_name || 'Valued Customer'}
+              </h1>
+              {profile?.status === 'restricted' ? (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  Restricted
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-[#B7FF00] border border-[#16A34A]/40">
+                  Active
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-emerald-200">
               <span className="flex items-center gap-1">
-                <Mail className="w-3.5 h-3.5 text-amber-400" /> {user.email}
+                <Mail className="w-3.5 h-3.5 text-[#B7FF00]" /> {user.email}
               </span>
               {profile?.phone && (
                 <span className="flex items-center gap-1">
-                  <Phone className="w-3.5 h-3.5 text-amber-400" /> {profile.phone}
+                  <Phone className="w-3.5 h-3.5 text-[#B7FF00]" /> {profile.phone}
                 </span>
               )}
             </div>
@@ -352,18 +244,25 @@ export const AccountView: React.FC<AccountViewProps> = ({
             await signOut();
             setCurrentTab('home');
           }}
-          className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+          className="bg-[#071A0E] hover:bg-neutral-800 text-neutral-300 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors border border-[#16A34A]/20 cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5 text-rose-400" /> Sign Out
         </button>
       </div>
 
+      {/* Restricted User Alert Banner */}
+      {profile?.status === 'restricted' && (
+        <AccountRestrictedBanner
+          onContactSupport={() => setActiveTab('support')}
+        />
+      )}
+
       {/* Main Tabs Navigation */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-neutral-200">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-emerald-100">
         {[
           { id: 'orders', label: 'My Orders', icon: Package, badge: orders.length },
           { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadCount },
-          { id: 'support', label: 'Customer Support', icon: Headphones, badge: tickets.length },
+          { id: 'support', label: 'Customer Support', icon: Headphones },
           { id: 'profile', label: 'Personal Profile', icon: User },
           { id: 'security', label: 'Security', icon: Shield },
         ].map((tab) => {
@@ -373,18 +272,18 @@ export const AccountView: React.FC<AccountViewProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
+              className={`px-4 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-neutral-900 text-white shadow-xs'
-                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
+                  ? 'bg-[#052E16] text-[#B7FF00] border border-[#16A34A]/40 shadow-xs'
+                  : 'text-neutral-600 hover:text-[#052E16] hover:bg-[#F0FDF4]'
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'text-neutral-500'}`} />
+              <Icon className={`w-4 h-4 ${isActive ? 'text-[#B7FF00]' : 'text-neutral-500'}`} />
               <span>{tab.label}</span>
               {tab.badge !== undefined && tab.badge > 0 && (
                 <span
                   className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
-                    isActive ? 'bg-amber-500 text-neutral-950' : 'bg-neutral-200 text-neutral-800'
+                    isActive ? 'bg-[#16A34A] text-white' : 'bg-emerald-100 text-emerald-800'
                   }`}
                 >
                   {tab.badge}
@@ -399,13 +298,13 @@ export const AccountView: React.FC<AccountViewProps> = ({
       {activeTab === 'orders' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-neutral-900 font-display">
+            <h2 className="text-xl font-bold text-[#052E16] font-display">
               Orders History & Active Deliveries
             </h2>
             <button
               onClick={loadOrders}
               disabled={loadingOrders}
-              className="text-xs font-semibold text-amber-600 hover:text-amber-800 flex items-center gap-1.5"
+              className="text-xs font-semibold text-[#16A34A] hover:text-[#15803D] flex items-center gap-1.5 cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loadingOrders ? 'animate-spin' : ''}`} />
               <span>Refresh Orders</span>
@@ -417,15 +316,15 @@ export const AccountView: React.FC<AccountViewProps> = ({
               Loading your orders from Supabase...
             </div>
           ) : orders.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-neutral-200 space-y-4">
-              <Package className="w-12 h-12 text-neutral-300 mx-auto" />
-              <h3 className="text-base font-bold text-neutral-900">No orders placed yet</h3>
+            <div className="bg-white rounded-3xl p-12 text-center border border-emerald-100 space-y-4">
+              <Package className="w-12 h-12 text-emerald-300 mx-auto" />
+              <h3 className="text-base font-bold text-[#052E16]">No orders placed yet</h3>
               <p className="text-xs text-neutral-500 max-w-sm mx-auto">
                 Explore our menu to order smoky party Jollof, royal Egusi soup, or tender Hausa suya!
               </p>
               <button
                 onClick={() => setCurrentTab('menu')}
-                className="bg-neutral-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold"
+                className="bg-[#16A34A] hover:bg-[#15803D] text-white px-5 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
               >
                 Browse Menu
               </button>
@@ -435,20 +334,20 @@ export const AccountView: React.FC<AccountViewProps> = ({
               {orders.map((ord) => (
                 <div
                   key={ord.id}
-                  className="bg-white rounded-2xl p-5 sm:p-6 border border-neutral-200 shadow-xs hover:border-amber-400/80 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
+                  className="bg-white rounded-2xl p-5 sm:p-6 border border-emerald-100 shadow-xs hover:border-[#16A34A]/50 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
                 >
                   <div className="space-y-2 flex-1">
                     <div className="flex flex-wrap items-center gap-3">
-                      <span className="font-extrabold text-sm sm:text-base text-neutral-900 font-display">
+                      <span className="font-extrabold text-sm sm:text-base text-[#052E16] font-display">
                         #{ord.order_number}
                       </span>
                       <span
                         className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
                           ord.order_status === 'Delivered'
-                            ? 'bg-emerald-100 text-emerald-800'
+                            ? 'bg-emerald-100 text-[#16A34A]'
                             : ord.order_status === 'Cancelled'
                             ? 'bg-rose-100 text-rose-800'
-                            : 'bg-amber-100 text-amber-900'
+                            : 'bg-[#F0FDF4] text-[#0B3D20] border border-emerald-200'
                         }`}
                       >
                         {ord.order_status}
@@ -465,17 +364,17 @@ export const AccountView: React.FC<AccountViewProps> = ({
                     )}
 
                     <div className="text-xs text-neutral-500 flex flex-wrap items-center gap-2">
-                      <span>Total: <strong className="text-neutral-900">{formatNaira(ord.total)}</strong></span>
+                      <span>Total: <strong className="text-[#052E16]">{formatNaira(ord.total)}</strong></span>
                       <span>•</span>
                       <span>{formatPaymentMethodForDisplay(ord.payment_method)}</span>
                       <span>•</span>
                       <span
                         className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
                           ord.payment_status?.toLowerCase() === 'paid'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            ? 'bg-emerald-50 text-[#16A34A] border border-emerald-200'
                             : ord.payment_status?.toLowerCase() === 'rejected' || ord.payment_status?.toLowerCase() === 'failed'
                             ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                            : 'bg-amber-50 text-amber-800 border border-amber-200'
+                            : 'bg-[#F0FDF4] text-emerald-800 border border-emerald-200'
                         }`}
                       >
                         {ord.payment_status?.toLowerCase() === 'paid'
@@ -492,15 +391,15 @@ export const AccountView: React.FC<AccountViewProps> = ({
                   <div className="flex items-center gap-3 w-full md:w-auto">
                     <button
                       onClick={() => onTrackOrder(ord)}
-                      className="flex-1 md:flex-none bg-neutral-900 hover:bg-neutral-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                      className="flex-1 md:flex-none bg-[#16A34A] hover:bg-[#15803D] text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                     >
-                      <Eye className="w-3.5 h-3.5 text-amber-400" />
+                      <Eye className="w-3.5 h-3.5 text-[#B7FF00]" />
                       <span>Track Order</span>
                     </button>
 
                     <button
                       onClick={() => handleReorder(ord)}
-                      className="flex-1 md:flex-none bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors"
+                      className="flex-1 md:flex-none bg-[#F0FDF4] hover:bg-emerald-100 text-[#16A34A] border border-emerald-200 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                     >
                       Reorder Tray
                     </button>
@@ -516,13 +415,13 @@ export const AccountView: React.FC<AccountViewProps> = ({
       {activeTab === 'notifications' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-neutral-900 font-display">
+            <h2 className="text-xl font-bold text-[#052E16] font-display">
               Activity & Order Notifications
             </h2>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-xs font-semibold text-amber-600 hover:text-amber-800"
+                className="text-xs font-semibold text-[#16A34A] hover:text-[#15803D] cursor-pointer"
               >
                 Mark All as Read
               </button>
@@ -530,15 +429,15 @@ export const AccountView: React.FC<AccountViewProps> = ({
           </div>
 
           {notifications.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-neutral-200 space-y-3">
-              <Bell className="w-10 h-10 text-neutral-300 mx-auto" />
-              <h3 className="text-base font-bold text-neutral-900">No notifications</h3>
+            <div className="bg-white rounded-3xl p-12 text-center border border-emerald-100 space-y-3">
+              <Bell className="w-10 h-10 text-emerald-300 mx-auto" />
+              <h3 className="text-base font-bold text-[#052E16]">No notifications</h3>
               <p className="text-xs text-neutral-500">
-                You'll receive live alerts here whenever an order status updates or customer support replies.
+                You'll receive live alerts here whenever an announcement is made, order status updates, or customer support replies.
               </p>
             </div>
           ) : (
-            <div className="bg-white rounded-3xl border border-neutral-200 divide-y divide-neutral-100 overflow-hidden shadow-xs">
+            <div className="bg-white rounded-3xl border border-emerald-100 divide-y divide-emerald-50 overflow-hidden shadow-xs">
               {notifications.map((n) => (
                 <div
                   key={n.id}
@@ -546,19 +445,33 @@ export const AccountView: React.FC<AccountViewProps> = ({
                     if (!n.read) markAsRead(n.id);
                   }}
                   className={`p-5 flex items-start justify-between gap-4 transition-colors cursor-pointer ${
-                    !n.read ? 'bg-amber-50/70' : 'hover:bg-neutral-50'
+                    !n.read ? 'bg-[#F0FDF4] border-l-4 border-[#16A34A]' : 'hover:bg-emerald-50/40'
                   }`}
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      {!n.read && <span className="w-2 h-2 rounded-full bg-amber-500"></span>}
-                      <h4 className={`text-sm font-bold ${!n.read ? 'text-amber-950' : 'text-neutral-900'}`}>
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {!n.user_id && (
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-[#052E16] text-[#B7FF00] tracking-wider">
+                          Broadcast
+                        </span>
+                      )}
+                      {!n.read && <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] shadow-[0_0_6px_#16A34A]" />}
+                      <h4 className={`text-sm font-bold ${!n.read ? 'text-[#052E16]' : 'text-neutral-900'}`}>
                         {n.title}
                       </h4>
                     </div>
                     <p className="text-xs text-neutral-600 leading-relaxed">{n.message}</p>
-                    <span className="text-[10px] text-neutral-400 block pt-1">
-                      {new Date(n.created_at).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })}
+                    <span className="text-[10px] text-neutral-400 block pt-0.5 font-mono">
+                      {new Date(n.created_at).toLocaleDateString('en-NG', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}{' '}
+                      at{' '}
+                      {new Date(n.created_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </span>
                   </div>
                 </div>
@@ -570,173 +483,34 @@ export const AccountView: React.FC<AccountViewProps> = ({
 
       {/* TAB CONTENT: SUPPORT TICKETS & REAL-TIME CHAT */}
       {activeTab === 'support' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-neutral-900 font-display">
-                Customer Care & Support
-              </h2>
-              <p className="text-xs text-neutral-500">
-                Submit an inquiry or chat with our operations team regarding food, delivery, or orders.
-              </p>
-            </div>
-            <button
-              onClick={() => setShowNewTicketModal(true)}
-              className="bg-neutral-900 hover:bg-neutral-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
-            >
-              <Plus className="w-4 h-4 text-amber-400" />
-              <span>Create Ticket</span>
-            </button>
-          </div>
-
-          {/* Tickets & Conversation Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left: Tickets List */}
-            <div className="lg:col-span-4 bg-white rounded-3xl border border-neutral-200 shadow-xs overflow-hidden">
-              <div className="p-4 border-b border-neutral-100 font-bold text-xs text-neutral-700 uppercase tracking-wider">
-                Your Tickets ({tickets.length})
-              </div>
-
-              {tickets.length === 0 ? (
-                <div className="p-8 text-center text-xs text-neutral-500">
-                  <Headphones className="w-8 h-8 text-neutral-300 mx-auto mb-2" />
-                  <p>No support tickets yet.</p>
-                </div>
-              ) : (
-                <div className="max-h-96 overflow-y-auto divide-y divide-neutral-100">
-                  {tickets.map((t) => {
-                    const isSelected = selectedTicket?.id === t.id;
-                    return (
-                      <div
-                        key={t.id}
-                        onClick={() => setSelectedTicket(t)}
-                        className={`p-4 cursor-pointer transition-colors ${
-                          isSelected ? 'bg-amber-50/80 border-l-4 border-amber-500' : 'hover:bg-neutral-50'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-bold text-xs text-neutral-900 line-clamp-1">{t.subject}</h4>
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                              t.status === 'Resolved'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}
-                          >
-                            {t.status}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] text-neutral-400 mt-2">
-                          <span>{t.category}</span>
-                          <span>{new Date(t.created_at).toLocaleDateString('en-NG')}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Right: Active Ticket Chat */}
-            <div className="lg:col-span-8 bg-white rounded-3xl border border-neutral-200 shadow-xs flex flex-col h-[500px] overflow-hidden">
-              {selectedTicket ? (
-                <>
-                  {/* Chat Header */}
-                  <div className="p-4 sm:p-5 border-b border-neutral-100 bg-neutral-50/60 flex items-center justify-between">
-                    <div>
-                      <h3 className="font-bold text-sm text-neutral-900">{selectedTicket.subject}</h3>
-                      <div className="flex items-center gap-2 text-xs text-neutral-500 mt-0.5">
-                        <span className="bg-neutral-200 text-neutral-800 px-2 py-0.5 rounded-md font-semibold text-[10px]">
-                          {selectedTicket.category}
-                        </span>
-                        <span>• Status: <strong>{selectedTicket.status}</strong></span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Messages Area */}
-                  <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-3 bg-neutral-50/30">
-                    {ticketMessages.length === 0 ? (
-                      <div className="text-center py-12 text-xs text-neutral-400">
-                        No messages in this conversation yet.
-                      </div>
-                    ) : (
-                      ticketMessages.map((msg) => {
-                        const isMe = msg.sender_id === user.id;
-                        return (
-                          <div
-                            key={msg.id}
-                            className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-                          >
-                            <div
-                              className={`max-w-md p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
-                                isMe
-                                  ? 'bg-neutral-900 text-white rounded-br-xs'
-                                  : 'bg-white border border-neutral-200 text-neutral-800 rounded-bl-xs shadow-xs'
-                              }`}
-                            >
-                              <p>{msg.message}</p>
-                            </div>
-                            <span className="text-[10px] text-neutral-400 mt-1 px-1">
-                              {isMe ? 'You' : 'MUNAJ Support'} •{' '}
-                              {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {/* Message Input Box */}
-                  <form onSubmit={handleSendMessage} className="p-3 border-t border-neutral-100 flex gap-2 bg-white">
-                    <input
-                      type="text"
-                      value={newMessageText}
-                      onChange={(e) => setNewMessageText(e.target.value)}
-                      placeholder="Type your message to MUNAJ support team..."
-                      className="flex-1 px-4 py-2.5 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-hidden bg-neutral-50"
-                    />
-                    <button
-                      type="submit"
-                      disabled={sendingMessage || !newMessageText.trim()}
-                      className="bg-neutral-900 hover:bg-neutral-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-50"
-                    >
-                      <Send className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Send</span>
-                    </button>
-                  </form>
-                </>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-neutral-400 text-xs">
-                  <MessageSquare className="w-10 h-10 mb-2 text-neutral-300" />
-                  <p>Select a support ticket on the left or create a new ticket to begin chat.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <CustomerSupport
+          prefilledOrderNumber={prefilledSupportOrder}
+          onNavigateToOrders={() => setActiveTab('orders')}
+          onTrackOrder={onTrackOrder}
+          openAuthModal={openAuthModal}
+        />
       )}
 
       {/* TAB CONTENT: PROFILE */}
       {activeTab === 'profile' && (
-        <div className="max-w-2xl bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-xs space-y-6">
-          <h2 className="text-xl font-bold text-neutral-900 font-display pb-3 border-b border-neutral-100">
+        <div className="max-w-2xl bg-white rounded-3xl p-6 sm:p-8 border border-emerald-100 shadow-xs space-y-6">
+          <h2 className="text-xl font-bold text-[#052E16] font-display pb-3 border-b border-emerald-100">
             Edit Customer Profile
           </h2>
 
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">Full Name</label>
+              <label className="block text-xs font-bold text-[#052E16] mb-1">Full Name</label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-hidden bg-neutral-50"
+                className="w-full px-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 text-[#052E16]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">Email Address</label>
+              <label className="block text-xs font-bold text-[#052E16] mb-1">Email Address</label>
               <input
                 type="email"
                 disabled
@@ -746,20 +520,20 @@ export const AccountView: React.FC<AccountViewProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">Phone Number</label>
+              <label className="block text-xs font-bold text-[#052E16] mb-1">Phone Number</label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+234 801 234 5678"
-                className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-hidden bg-neutral-50"
+                className="w-full px-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 text-[#052E16]"
               />
             </div>
 
             <button
               type="submit"
               disabled={savingProfile}
-              className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-3 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 shadow-xs"
+              className="bg-[#16A34A] hover:bg-[#15803D] text-white px-6 py-3 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 shadow-xs cursor-pointer"
             >
               {savingProfile ? 'Saving Changes...' : 'Save Profile Changes'}
             </button>
@@ -769,15 +543,15 @@ export const AccountView: React.FC<AccountViewProps> = ({
 
       {/* TAB CONTENT: SECURITY */}
       {activeTab === 'security' && (
-        <div className="max-w-2xl bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-xs space-y-6">
-          <h2 className="text-xl font-bold text-neutral-900 font-display pb-3 border-b border-neutral-100">
+        <div className="max-w-2xl bg-white rounded-3xl p-6 sm:p-8 border border-emerald-100 shadow-xs space-y-6">
+          <h2 className="text-xl font-bold text-[#052E16] font-display pb-3 border-b border-emerald-100">
             Account Security & Privacy
           </h2>
 
           <div className="space-y-4 text-xs">
-            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-2">
-              <h4 className="font-bold text-neutral-900">Protected Customer Session</h4>
-              <p className="text-neutral-500">
+            <div className="p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-200 space-y-2">
+              <h4 className="font-bold text-[#052E16]">Protected Customer Session</h4>
+              <p className="text-neutral-600">
                 Your session is safely authenticated via Supabase Row-Level-Security (RLS). Only you have access to your personal delivery addresses, orders, and support tickets.
               </p>
             </div>
@@ -790,102 +564,11 @@ export const AccountView: React.FC<AccountViewProps> = ({
                     showToast('success', 'Reset Email Sent', 'Password reset instructions sent to your email.');
                   }
                 }}
-                className="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 px-5 py-2.5 rounded-xl font-bold text-xs transition-colors"
+                className="bg-[#052E16] hover:bg-[#0B3D20] text-[#B7FF00] px-5 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer"
               >
                 Send Password Reset Email
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* CREATE SUPPORT TICKET MODAL */}
-      {showNewTicketModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 border border-neutral-200 relative animate-in zoom-in-95 duration-200 space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-              <h3 className="font-bold text-neutral-900 text-base">New Support Inquiry</h3>
-              <button
-                onClick={() => setShowNewTicketModal(false)}
-                className="text-neutral-400 hover:text-neutral-700"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateTicket} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">Subject</label>
-                <input
-                  type="text"
-                  required
-                  value={ticketSubject}
-                  onChange={(e) => setTicketSubject(e.target.value)}
-                  placeholder="e.g. Delivery delay / Special request for Order #MNJ-49821"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-hidden bg-neutral-50"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 mb-1">Category</label>
-                  <select
-                    value={ticketCategory}
-                    onChange={(e) => setTicketCategory(e.target.value as any)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-neutral-300 text-xs focus:border-amber-500 outline-hidden bg-neutral-50"
-                  >
-                    <option value="Order Issue">Order Issue</option>
-                    <option value="Delivery Status">Delivery Status</option>
-                    <option value="Food Quality">Food Quality</option>
-                    <option value="Payment Inquiry">Payment Inquiry</option>
-                    <option value="General Inquiry">General Inquiry</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 mb-1">Priority</label>
-                  <select
-                    value={ticketPriority}
-                    onChange={(e) => setTicketPriority(e.target.value as any)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-neutral-300 text-xs focus:border-amber-500 outline-hidden bg-neutral-50"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">Message Description</label>
-                <textarea
-                  required
-                  rows={4}
-                  value={ticketMessage}
-                  onChange={(e) => setTicketMessage(e.target.value)}
-                  placeholder="Describe your inquiry in detail so our kitchen or rider support can resolve it immediately..."
-                  className="w-full p-3 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-hidden bg-neutral-50 resize-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowNewTicketModal(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-neutral-600 hover:bg-neutral-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={creatingTicket}
-                  className="bg-neutral-900 hover:bg-neutral-800 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
-                >
-                  {creatingTicket ? 'Submitting...' : 'Submit Support Ticket'}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

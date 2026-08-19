@@ -26,6 +26,7 @@ import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { supabase, createOrder, formatNaira, getPaymentSettings } from '../lib/supabase';
 import { DEFAULT_PAYMENT_SETTINGS } from '../data/defaults';
+import { AccountRestrictedBanner } from '../components/AccountRestrictedBanner';
 
 interface CheckoutViewProps {
   setCurrentTab: (tab: ViewTab) => void;
@@ -120,7 +121,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
   if (items.length === 0) {
     return (
       <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-4">
-        <h2 className="text-2xl font-bold text-neutral-900 font-display">
+        <h2 className="text-2xl font-bold text-[#052E16] font-display">
           Your Tray is Empty
         </h2>
         <p className="text-xs text-neutral-500">
@@ -128,7 +129,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
         </p>
         <button
           onClick={() => setCurrentTab('menu')}
-          className="bg-neutral-900 text-white px-6 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+          className="bg-[#16A34A] hover:bg-[#15803D] text-white px-6 py-2.5 rounded-xl text-xs font-bold cursor-pointer shadow-md transition-colors"
         >
           Return to Menu
         </button>
@@ -159,6 +160,19 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
       setErrorMessage('Please sign in before placing your order.');
       showToast('error', 'Sign In Required', 'Please sign in or create an account to complete checkout.');
       openAuthModal();
+      return;
+    }
+
+    // Profile Status Check (Restricted or Banned)
+    if (profile?.status === 'banned') {
+      setErrorMessage('Your MUNAJ account has been suspended. Please contact Customer Support if you believe this was a mistake.');
+      showToast('error', 'Account Suspended', 'Your account has been suspended.');
+      return;
+    }
+
+    if (profile?.status === 'restricted') {
+      setErrorMessage('Your account currently has restricted access. Please contact MUNAJ Customer Support for assistance.');
+      showToast('warning', 'Account Restricted', 'Ordering is disabled for restricted accounts.');
       return;
     }
 
@@ -220,7 +234,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
           particleCount: 80,
           spread: 70,
           origin: { y: 0.6 },
-          colors: ['#f59e0b', '#10b981', '#3b82f6'],
+          colors: ['#16A34A', '#B7FF00', '#0B3D20'],
         });
       } catch {}
 
@@ -261,32 +275,42 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
       <div className="flex items-center gap-3">
         <button
           onClick={() => setCurrentTab('cart')}
-          className="p-2 rounded-xl border border-neutral-200 hover:bg-neutral-100 text-neutral-600 transition-colors cursor-pointer"
+          className="p-2 rounded-xl border border-emerald-200 hover:bg-[#F0FDF4] text-emerald-800 transition-colors cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 font-display">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#052E16] font-display">
             Delivery & Checkout
           </h1>
-          <p className="text-xs text-neutral-500 mt-0.5">
+          <p className="text-xs text-emerald-800/80 mt-0.5">
             Complete your recipient and delivery details to receive your freshly prepared Nigerian delicacies.
           </p>
         </div>
       </div>
 
+      {/* Restricted Account Warning Banner */}
+      {user && profile?.status === 'restricted' && (
+        <AccountRestrictedBanner
+          onContactSupport={() => {
+            setCurrentTab('account');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      )}
+
       {/* Guest Notice */}
       {!user && (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2.5 text-amber-900">
-            <User className="w-4 h-4 text-amber-600 shrink-0" />
+        <div className="p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-[#0B3D20]">
+            <User className="w-4 h-4 text-[#16A34A] shrink-0" />
             <span>
               Ordering as a Guest. <strong>Have an account?</strong> Sign in to auto-fill your saved addresses and track live updates!
             </span>
           </div>
           <button
             onClick={openAuthModal}
-            className="bg-neutral-900 text-white px-4 py-2 rounded-xl font-bold hover:bg-neutral-800 transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+            className="bg-[#052E16] hover:bg-[#0B3D20] text-[#B7FF00] border border-[#16A34A]/40 px-4 py-2 rounded-xl font-bold transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
           >
             Sign In / Register
           </button>
@@ -300,10 +324,10 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
           <form
             id="checkout-form"
             onSubmit={handlePlaceOrder}
-            className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-xs space-y-6"
+            className="bg-white rounded-3xl p-6 sm:p-8 border border-emerald-100 shadow-xs space-y-6"
           >
-            <h3 className="font-bold text-neutral-900 text-lg font-display pb-3 border-b border-neutral-100 flex items-center gap-2">
-              <Truck className="w-5 h-5 text-amber-500" />
+            <h3 className="font-bold text-[#052E16] text-lg font-display pb-3 border-b border-emerald-100 flex items-center gap-2">
+              <Truck className="w-5 h-5 text-[#16A34A]" />
               <span>Recipient & Delivery Address</span>
             </h3>
 
@@ -321,11 +345,11 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
+                <label className="block text-xs font-bold text-[#052E16] mb-1">
                   Full Recipient Name <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <User className="w-4 h-4 text-emerald-700/50 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
@@ -333,17 +357,17 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="e.g. Babatunde Adeleke"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-hidden bg-neutral-50"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 text-[#052E16]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
+                <label className="block text-xs font-bold text-[#052E16] mb-1">
                   Active Phone Number <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Phone className="w-4 h-4 text-emerald-700/50 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="tel"
                     required
@@ -351,35 +375,35 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="e.g. 0801 234 5678"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-hidden bg-neutral-50"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 text-[#052E16]"
                   />
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
+              <label className="block text-xs font-bold text-[#052E16] mb-1">
                 Email Address (For Order Receipts)
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-emerald-700/50 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   id="checkout-email"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="babatunde@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-hidden bg-neutral-50"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 text-[#052E16]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
+              <label className="block text-xs font-bold text-[#052E16] mb-1">
                 Detailed Delivery Address <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <MapPin className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
+                <MapPin className="w-4 h-4 text-emerald-700/50 absolute left-3.5 top-3" />
                 <textarea
                   required
                   rows={3}
@@ -387,40 +411,40 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
                   placeholder="Flat 4B, Block 12, Ocean View Estate, Admiralty Way, Lekki Phase 1, Lagos"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-hidden bg-neutral-50 resize-none"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 resize-none text-[#052E16]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
+              <label className="block text-xs font-bold text-[#052E16] mb-1">
                 Delivery Instructions & Nearby Landmark (Optional)
               </label>
               <div className="relative">
-                <FileText className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
+                <FileText className="w-4 h-4 text-emerald-700/50 absolute left-3.5 top-3" />
                 <textarea
                   rows={2}
                   value={deliveryNotes}
                   onChange={(e) => setDeliveryNotes(e.target.value)}
                   placeholder="e.g. Opposite standard pharmacy, call when gate security asks for access code."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-hidden bg-neutral-50 resize-none"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 resize-none text-[#052E16]"
                 />
               </div>
             </div>
 
             {/* Payment Method Selection */}
-            <div className="pt-4 border-t border-neutral-100 space-y-4">
+            <div className="pt-4 border-t border-emerald-100 space-y-4">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#052E16]">
                   Payment Method
                 </label>
-                <span className="text-[11px] font-semibold text-neutral-400">
+                <span className="text-[11px] font-semibold text-emerald-700">
                   All transactions in ₦ NGN
                 </span>
               </div>
 
               {!hasAnyPaymentMethod ? (
-                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+                <div className="p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-200 text-emerald-800 text-xs">
                   Payment methods are currently being configured by MUNAJ Kitchen. Please call our hotline to complete your order.
                 </div>
               ) : (
@@ -432,24 +456,24 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                       onClick={() => setPaymentMethod('bank_transfer')}
                       className={`p-4 rounded-2xl border-2 cursor-pointer flex flex-col justify-between transition-all ${
                         paymentMethod === 'bank_transfer'
-                          ? 'border-amber-500 bg-amber-50/60 shadow-xs'
-                          : 'border-neutral-200 bg-neutral-50 hover:border-neutral-300'
+                          ? 'border-[#16A34A] bg-[#F0FDF4] shadow-xs'
+                          : 'border-emerald-100 bg-white hover:border-emerald-300'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-700 flex items-center justify-center shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#16A34A] flex items-center justify-center shrink-0">
                           <Building2 className="w-5 h-5" />
                         </div>
-                        <div className="w-5 h-5 rounded-full border-2 border-amber-500 flex items-center justify-center mt-1">
+                        <div className="w-5 h-5 rounded-full border-2 border-[#16A34A] flex items-center justify-center mt-1">
                           {paymentMethod === 'bank_transfer' && (
-                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#16A34A]"></div>
                           )}
                         </div>
                       </div>
                       <div className="mt-3">
-                        <h4 className="font-bold text-sm text-neutral-900 flex items-center gap-1.5">
+                        <h4 className="font-bold text-sm text-[#052E16] flex items-center gap-1.5">
                           <span>Bank Transfer</span>
-                          <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded-md">
+                          <span className="text-[10px] bg-[#16A34A] text-white font-extrabold px-1.5 py-0.5 rounded-md">
                             Direct
                           </span>
                         </h4>
@@ -467,22 +491,22 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                       onClick={() => setPaymentMethod('cod')}
                       className={`p-4 rounded-2xl border-2 cursor-pointer flex flex-col justify-between transition-all ${
                         paymentMethod === 'cod'
-                          ? 'border-amber-500 bg-amber-50/60 shadow-xs'
-                          : 'border-neutral-200 bg-neutral-50 hover:border-neutral-300'
+                          ? 'border-[#16A34A] bg-[#F0FDF4] shadow-xs'
+                          : 'border-emerald-100 bg-white hover:border-emerald-300'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#16A34A] flex items-center justify-center shrink-0">
                           <Banknote className="w-5 h-5" />
                         </div>
-                        <div className="w-5 h-5 rounded-full border-2 border-amber-500 flex items-center justify-center mt-1">
+                        <div className="w-5 h-5 rounded-full border-2 border-[#16A34A] flex items-center justify-center mt-1">
                           {paymentMethod === 'cod' && (
-                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#16A34A]"></div>
                           )}
                         </div>
                       </div>
                       <div className="mt-3">
-                        <h4 className="font-bold text-sm text-neutral-900">
+                        <h4 className="font-bold text-sm text-[#052E16]">
                           Cash on Delivery
                         </h4>
                         <p className="text-xs text-neutral-500 mt-0.5">
@@ -499,22 +523,22 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                       onClick={() => setPaymentMethod('paystack')}
                       className={`p-4 rounded-2xl border-2 cursor-pointer flex flex-col justify-between transition-all ${
                         paymentMethod === 'paystack'
-                          ? 'border-amber-500 bg-amber-50/60 shadow-xs'
-                          : 'border-neutral-200 bg-neutral-50 hover:border-neutral-300'
+                          ? 'border-[#16A34A] bg-[#F0FDF4] shadow-xs'
+                          : 'border-emerald-100 bg-white hover:border-emerald-300'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-700 flex items-center justify-center shrink-0">
                           <CreditCard className="w-5 h-5" />
                         </div>
-                        <div className="w-5 h-5 rounded-full border-2 border-amber-500 flex items-center justify-center mt-1">
+                        <div className="w-5 h-5 rounded-full border-2 border-[#16A34A] flex items-center justify-center mt-1">
                           {paymentMethod === 'paystack' && (
-                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#16A34A]"></div>
                           )}
                         </div>
                       </div>
                       <div className="mt-3">
-                        <h4 className="font-bold text-sm text-neutral-900 flex items-center gap-1.5">
+                        <h4 className="font-bold text-sm text-[#052E16] flex items-center gap-1.5">
                           <span>Paystack</span>
                           <span className="text-[10px] bg-blue-100 text-blue-800 font-extrabold px-1.5 py-0.5 rounded-md">
                             Online
@@ -534,24 +558,24 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                       onClick={() => setPaymentMethod('flutterwave')}
                       className={`p-4 rounded-2xl border-2 cursor-pointer flex flex-col justify-between transition-all ${
                         paymentMethod === 'flutterwave'
-                          ? 'border-amber-500 bg-amber-50/60 shadow-xs'
-                          : 'border-neutral-200 bg-neutral-50 hover:border-neutral-300'
+                          ? 'border-[#16A34A] bg-[#F0FDF4] shadow-xs'
+                          : 'border-emerald-100 bg-white hover:border-emerald-300'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-orange-500/15 text-orange-700 flex items-center justify-center shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center shrink-0">
                           <Zap className="w-5 h-5" />
                         </div>
-                        <div className="w-5 h-5 rounded-full border-2 border-amber-500 flex items-center justify-center mt-1">
+                        <div className="w-5 h-5 rounded-full border-2 border-[#16A34A] flex items-center justify-center mt-1">
                           {paymentMethod === 'flutterwave' && (
-                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#16A34A]"></div>
                           )}
                         </div>
                       </div>
                       <div className="mt-3">
-                        <h4 className="font-bold text-sm text-neutral-900 flex items-center gap-1.5">
+                        <h4 className="font-bold text-sm text-[#052E16] flex items-center gap-1.5">
                           <span>Flutterwave</span>
-                          <span className="text-[10px] bg-orange-100 text-orange-800 font-extrabold px-1.5 py-0.5 rounded-md">
+                          <span className="text-[10px] bg-amber-100 text-amber-800 font-extrabold px-1.5 py-0.5 rounded-md">
                             Instant
                           </span>
                         </h4>
@@ -566,21 +590,21 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
 
               {/* Dynamic Bank Transfer Information Card */}
               {paymentMethod === 'bank_transfer' && paymentSettings.bank_transfer_enabled && (
-                <div className="p-4 sm:p-5 rounded-2xl bg-neutral-900 text-white border border-neutral-800 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#052E16] via-[#0B3D20] to-[#071A0E] text-white border border-[#16A34A]/40 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 shadow-xl">
+                  <div className="flex items-center justify-between pb-3 border-b border-emerald-900/60">
                     <div className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                      <Building2 className="w-4 h-4 text-[#B7FF00]" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-[#B7FF00]">
                         Official Bank Account Details
                       </span>
                     </div>
-                    <span className="text-[11px] text-neutral-400">Nigerian Naira (NGN / ₦)</span>
+                    <span className="text-[11px] text-emerald-200">Nigerian Naira (NGN / ₦)</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     {/* Bank Name */}
                     <div>
-                      <span className="text-[11px] text-neutral-400 block">Bank Name</span>
+                      <span className="text-[11px] text-emerald-300/80 block">Bank Name</span>
                       <span className="font-bold text-white text-sm" id="checkout-bank-name">
                         {paymentSettings.bank_name || 'Access Bank'}
                       </span>
@@ -588,16 +612,16 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
 
                     {/* Account Name */}
                     <div>
-                      <span className="text-[11px] text-neutral-400 block">Account Name</span>
+                      <span className="text-[11px] text-emerald-300/80 block">Account Name</span>
                       <span className="font-bold text-white text-sm" id="checkout-account-name">
                         {paymentSettings.account_name || 'MUNAJ FOODS'}
                       </span>
                     </div>
 
                     {/* Account Number & Copy Button */}
-                    <div className="sm:col-span-2 p-3.5 bg-neutral-950 rounded-xl border border-neutral-800 flex items-center justify-between gap-3">
+                    <div className="sm:col-span-2 p-3.5 bg-[#071A0E] rounded-xl border border-emerald-800/60 flex items-center justify-between gap-3">
                       <div>
-                        <span className="text-[10px] text-amber-400 uppercase font-bold block">
+                        <span className="text-[10px] text-[#B7FF00] uppercase font-bold block">
                           Account Number
                         </span>
                         <span className="font-mono font-extrabold text-lg sm:text-xl tracking-wider text-white" id="checkout-account-number">
@@ -608,12 +632,12 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                         type="button"
                         id="copy-account-number-btn"
                         onClick={handleCopyAccountNumber}
-                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-amber-300 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
                       >
                         {copiedAccount ? (
                           <>
-                            <Check className="w-4 h-4 text-emerald-400" />
-                            <span className="text-emerald-400">Account number copied!</span>
+                            <Check className="w-4 h-4 text-[#B7FF00]" />
+                            <span className="text-[#B7FF00]">Account copied!</span>
                           </>
                         ) : (
                           <>
@@ -625,23 +649,23 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                     </div>
 
                     {/* Amount */}
-                    <div className="sm:col-span-2 p-3 bg-amber-500/10 rounded-xl border border-amber-500/30 flex items-center justify-between text-xs">
-                      <span className="text-amber-200 font-medium">Exact Transfer Amount Due:</span>
-                      <span className="font-extrabold text-amber-400 text-base">{formatNaira(total)}</span>
+                    <div className="sm:col-span-2 p-3 bg-emerald-950/60 rounded-xl border border-[#16A34A]/40 flex items-center justify-between text-xs">
+                      <span className="text-emerald-100 font-medium">Exact Transfer Amount Due:</span>
+                      <span className="font-extrabold text-[#B7FF00] text-base">{formatNaira(total)}</span>
                     </div>
 
                     {/* Transfer Instructions */}
                     {paymentSettings.transfer_instructions && (
-                      <div className="sm:col-span-2 flex items-start gap-2 text-[11px] text-neutral-300 bg-neutral-800/60 p-3 rounded-xl">
-                        <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="sm:col-span-2 flex items-start gap-2 text-[11px] text-emerald-100 bg-[#0B3D20]/80 p-3 rounded-xl border border-emerald-800/40">
+                        <Info className="w-4 h-4 text-[#B7FF00] shrink-0 mt-0.5" />
                         <span>{paymentSettings.transfer_instructions}</span>
                       </div>
                     )}
 
                     {/* Payment Reference Instructions */}
                     {paymentSettings.payment_reference_instructions && (
-                      <div className="sm:col-span-2 flex items-start gap-2 text-[11px] text-neutral-300 bg-neutral-800/40 p-3 rounded-xl border border-neutral-800">
-                        <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="sm:col-span-2 flex items-start gap-2 text-[11px] text-emerald-100 bg-[#0B3D20]/60 p-3 rounded-xl border border-emerald-800/40">
+                        <Sparkles className="w-4 h-4 text-[#B7FF00] shrink-0 mt-0.5" />
                         <span>{paymentSettings.payment_reference_instructions}</span>
                       </div>
                     )}
@@ -650,77 +674,93 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
               )}
             </div>
 
-            <button
-              type="submit"
-              disabled={loading || !hasAnyPaymentMethod}
-              id="place-order-btn"
-              className="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 py-4 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all disabled:opacity-60 cursor-pointer"
-            >
-              {loading ? (
-                <span>Placing your order...</span>
-              ) : (
-                <>
-                  <span>Place Order • {formatNaira(total)}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+            {user && profile?.status === 'restricted' ? (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  disabled
+                  id="place-order-btn"
+                  className="w-full bg-neutral-300 text-neutral-600 py-4 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 cursor-not-allowed"
+                >
+                  <span>Place Order Disabled (Account Restricted)</span>
+                </button>
+                <p className="text-center text-[11px] text-amber-800 font-semibold">
+                  Your account has restricted access. Please contact support to enable ordering.
+                </p>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                disabled={loading || !hasAnyPaymentMethod}
+                id="place-order-btn"
+                className="w-full bg-[#16A34A] hover:bg-[#15803D] text-white py-4 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-[#16A34A]/25 hover:shadow-[#16A34A]/35 transition-all disabled:opacity-60 cursor-pointer"
+              >
+                {loading ? (
+                  <span>Placing your order...</span>
+                ) : (
+                  <>
+                    <span>Place Order • {formatNaira(total)}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            )}
           </form>
         </div>
 
         {/* Right: Items Review */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-xs space-y-4">
-            <h3 className="font-bold text-neutral-900 text-base font-display pb-3 border-b border-neutral-100">
+          <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-xs space-y-4">
+            <h3 className="font-bold text-[#052E16] text-base font-display pb-3 border-b border-emerald-100">
               Items in Your Order ({items.length})
             </h3>
 
-            <div className="max-h-64 overflow-y-auto divide-y divide-neutral-100 pr-1">
+            <div className="max-h-64 overflow-y-auto divide-y divide-emerald-50 pr-1">
               {items.map(({ foodItem, quantity, instructions }) => (
                 <div key={foodItem.id} className="py-3 flex items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-800 font-bold flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-[#F0FDF4] text-[#16A34A] font-bold flex items-center justify-center shrink-0 border border-emerald-200">
                       {quantity}x
                     </div>
                     <div>
-                      <p className="font-bold text-neutral-900 line-clamp-1">{foodItem.name}</p>
+                      <p className="font-bold text-[#052E16] line-clamp-1">{foodItem.name}</p>
                       {instructions && (
                         <p className="text-[10px] text-neutral-400 italic">{instructions}</p>
                       )}
                     </div>
                   </div>
-                  <span className="font-extrabold text-neutral-900 shrink-0">
+                  <span className="font-extrabold text-[#052E16] shrink-0">
                     {formatNaira(foodItem.price * quantity)}
                   </span>
                 </div>
               ))}
             </div>
 
-            <div className="pt-3 border-t border-neutral-100 space-y-2 text-xs text-neutral-600">
+            <div className="pt-3 border-t border-emerald-100 space-y-2 text-xs text-emerald-950">
               <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span className="font-bold text-neutral-900">{formatNaira(subtotal)}</span>
+                <span className="text-neutral-600">Subtotal</span>
+                <span className="font-bold text-[#052E16]">{formatNaira(subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Delivery Fee</span>
-                <span className="font-bold text-neutral-900">
+                <span className="text-neutral-600">Delivery Fee</span>
+                <span className="font-bold text-[#052E16]">
                   {deliveryFee === 0 ? 'FREE' : formatNaira(deliveryFee)}
                 </span>
               </div>
               {discountAmount > 0 && (
-                <div className="flex justify-between text-amber-700">
+                <div className="flex justify-between text-[#16A34A]">
                   <span>Promo Discount</span>
                   <span className="font-bold">-{formatNaira(discountAmount)}</span>
                 </div>
               )}
-              <div className="pt-3 border-t border-neutral-200 flex justify-between text-sm font-extrabold text-neutral-900">
+              <div className="pt-3 border-t border-emerald-100 flex justify-between text-sm font-extrabold text-[#052E16]">
                 <span>Total Amount Due</span>
-                <span className="text-amber-600 text-base">{formatNaira(total)}</span>
+                <span className="text-[#16A34A] text-base font-black">{formatNaira(total)}</span>
               </div>
             </div>
 
-            <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 text-[11px] text-neutral-500 flex items-center gap-2">
-              <Lock className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+            <div className="p-3 bg-[#F0FDF4] rounded-xl border border-emerald-200 text-[11px] text-emerald-800 flex items-center gap-2">
+              <Lock className="w-3.5 h-3.5 text-[#16A34A] shrink-0" />
               <span>Safe and protected checkout session. Real-time driver dispatch.</span>
             </div>
           </div>

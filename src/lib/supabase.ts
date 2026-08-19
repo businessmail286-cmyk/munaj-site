@@ -12,11 +12,13 @@ import {
   Promotion,
   Testimonial,
   WebsiteSettings,
+  WebsiteBranding,
   PaymentSettings,
   ContactRequest,
 } from '../types';
 import {
   DEFAULT_WEBSITE_SETTINGS,
+  DEFAULT_BRANDING,
   DEFAULT_PAYMENT_SETTINGS,
   DEFAULT_TESTIMONIALS,
 } from '../data/defaults';
@@ -52,7 +54,44 @@ export function formatNaira(amount: number): string {
   }).format(amount || 0);
 }
 
-// ----------------- WEBSITE SETTINGS -----------------
+// ----------------- WEBSITE BRANDING & SETTINGS -----------------
+export async function getWebsiteBranding(): Promise<WebsiteBranding> {
+  try {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'website_branding')
+      .maybeSingle();
+
+    if (error || !data || !data.value) {
+      return DEFAULT_BRANDING;
+    }
+
+    let parsed = data.value;
+    if (typeof parsed === 'string') {
+      try {
+        parsed = JSON.parse(parsed);
+      } catch {
+        parsed = {};
+      }
+    }
+
+    return {
+      site_name: parsed.site_name || DEFAULT_BRANDING.site_name,
+      logo_url: parsed.logo_url || DEFAULT_BRANDING.logo_url,
+      favicon_url: parsed.favicon_url || DEFAULT_BRANDING.favicon_url,
+      primary_color: parsed.primary_color || DEFAULT_BRANDING.primary_color,
+      secondary_color: parsed.secondary_color || DEFAULT_BRANDING.secondary_color,
+      accent_color: parsed.accent_color || DEFAULT_BRANDING.accent_color,
+      text_color: parsed.text_color || DEFAULT_BRANDING.text_color,
+      tagline: parsed.tagline || DEFAULT_BRANDING.tagline,
+    };
+  } catch (err) {
+    console.warn('Error fetching website_branding from Supabase:', err);
+    return DEFAULT_BRANDING;
+  }
+}
+
 export async function getWebsiteSettings(): Promise<WebsiteSettings> {
   try {
     // 1. Try key-value settings table
@@ -355,33 +394,24 @@ export async function getPromotions(): Promise<Promotion[]> {
 export async function getAnnouncements(): Promise<Announcement[]> {
   try {
     const { data, error } = await supabase
-      .from('announcements')
+      .from('notifications')
       .select('*')
+      .is('user_id', null)
       .order('created_at', { ascending: false });
 
     if (error || !data) {
       return [];
     }
 
-    return data
-      .map((a: any) => {
-        const isPub =
-          a.published !== undefined
-            ? Boolean(a.published)
-            : a.is_published !== undefined
-            ? Boolean(a.is_published)
-            : true;
-        return {
-          id: a.id,
-          title: a.title,
-          message: a.message || a.content || '',
-          image_url: a.image_url || null,
-          published: isPub,
-          created_at: a.created_at || new Date().toISOString(),
-          updated_at: a.updated_at,
-        };
-      })
-      .filter((a) => a.published);
+    return data.map((a: any) => ({
+      id: a.id,
+      title: a.title,
+      message: a.message || '',
+      image_url: null,
+      published: true,
+      created_at: a.created_at || new Date().toISOString(),
+      updated_at: a.created_at,
+    }));
   } catch (err) {
     return [];
   }
@@ -474,6 +504,58 @@ export async function createOrder(params: CreateOrderParams): Promise<{ order: O
   }
 
   const authenticatedUserId = user.id;
+
+  // 1b. Customer Status Verification from public.profiles (Banned & Restricted check)
+  try {
+    const { data: profileRow } = await supabase
+      .from('profiles')
+      .select('status')
+      .eq('id', authenticatedUserId)
+      .maybeSingle();
+
+    const currentStatus = profileRow?.status || 'active';
+    if (currentStatus === 'banned') {
+      return {
+        order: {} as Order,
+        error: 'Your MUNAJ account has been suspended. Please contact Customer Support if you believe this was a mistake.',
+      };
+    }
+    if (currentStatus === 'restricted') {
+      return {
+        order: {} as Order,
+        error: 'Your account currently has restricted access. Please contact MUNAJ Customer Support for assistance.',
+      };
+    }
+  } catch (statusErr) {
+    console.warn('Profile status check notice:', statusErr);
+  }
+
+  // 1c. Dynamic Payment Method Verification from public.payment_settings
+  try {
+    const currentPaymentSettings = await getPaymentSettings();
+    const rawMethod = (params.paymentMethod || '').toLowerCase();
+    let isMethodAllowed = true;
+
+    if (rawMethod.includes('transfer') || rawMethod.includes('bank')) {
+      isMethodAllowed = currentPaymentSettings.bank_transfer_enabled;
+    } else if (rawMethod.includes('cash') || rawMethod.includes('cod') || rawMethod.includes('delivery')) {
+      isMethodAllowed = currentPaymentSettings.cash_on_delivery_enabled;
+    } else if (rawMethod.includes('paystack')) {
+      isMethodAllowed = currentPaymentSettings.paystack_enabled;
+    } else if (rawMethod.includes('flutterwave')) {
+      isMethodAllowed = currentPaymentSettings.flutterwave_enabled;
+    }
+
+    if (!isMethodAllowed) {
+      return {
+        order: {} as Order,
+        error: 'The selected payment method is currently disabled. Please choose an enabled payment method to complete your order.',
+      };
+    }
+  } catch (payCheckErr) {
+    console.warn('Payment settings verification notice:', payCheckErr);
+  }
+
   const rawPaymentMethod = params.paymentMethod || 'bank_transfer';
   const dbPaymentMethod = normalizePaymentMethodForDb(rawPaymentMethod);
   const displayPaymentMethod = formatPaymentMethodForDisplay(rawPaymentMethod);
@@ -563,14 +645,28 @@ export async function createOrder(params: CreateOrderParams): Promise<{ order: O
 
     // If check constraint fails on payment_method, attempt alternative fallback representations
     if (orderError && orderError.code === '23514' && orderError.message?.includes('orders_payment_method_check')) {
-      console.warn('Retrying order insert with fallback payment_method values for check constraint...');
-      const fallbackMethods = [
-        rawPaymentMethod,
-        dbPaymentMethod === 'bank_transfer' ? 'transfer' : dbPaymentMethod === 'cash_on_delivery' ? 'cash' : dbPaymentMethod,
-        dbPaymentMethod === 'bank_transfer' ? 'card' : 'cod',
-      ];
+      console.warn('Retrying order insert with compatible payment_method values for check constraint...');
+      
+      const candidateList: string[] = [];
+      if (dbPaymentMethod === 'flutterwave') {
+        candidateList.push('online', 'card', 'paystack', 'bank_transfer', 'transfer', 'cash_on_delivery', 'cash', 'pos', 'Flutterwave', 'flutterwave', 'Online', 'Card', 'Paystack');
+      } else if (dbPaymentMethod === 'paystack') {
+        candidateList.push('online', 'card', 'bank_transfer', 'transfer', 'cash_on_delivery', 'cash', 'pos', 'Paystack', 'paystack', 'Online', 'Card');
+      } else if (dbPaymentMethod === 'bank_transfer') {
+        candidateList.push('transfer', 'card', 'online', 'bank_transfer', 'Bank Transfer', 'Transfer', 'cash_on_delivery', 'cash');
+      } else if (dbPaymentMethod === 'cash_on_delivery') {
+        candidateList.push('cash', 'cod', 'cash_on_delivery', 'Cash on Delivery', 'Cash', 'bank_transfer', 'transfer');
+      } else {
+        candidateList.push('bank_transfer', 'cash_on_delivery', 'online', 'card', 'paystack', 'transfer', 'cash');
+      }
 
-      for (const altMethod of fallbackMethods) {
+      // Add general safety fallbacks
+      const standardFallbacks = ['bank_transfer', 'cash_on_delivery', 'transfer', 'cash', 'card', 'online', 'paystack'];
+      for (const sf of standardFallbacks) {
+        if (!candidateList.includes(sf)) candidateList.push(sf);
+      }
+
+      for (const altMethod of candidateList) {
         if (altMethod === dbPaymentMethod) continue;
         const retryRes = await supabase
           .from('orders')
@@ -580,6 +676,7 @@ export async function createOrder(params: CreateOrderParams): Promise<{ order: O
         if (!retryRes.error && retryRes.data) {
           orderData = retryRes.data;
           orderError = null;
+          console.log(`Order insert succeeded with compatible payment_method: "${altMethod}"`);
           break;
         }
       }
@@ -879,86 +976,229 @@ export async function getOrderById(orderIdOrNumber: string): Promise<Order | nul
 }
 
 // ----------------- NOTIFICATIONS -----------------
-export async function getCustomerNotifications(userId: string): Promise<NotificationItem[]> {
+export async function getCustomerNotifications(userId?: string): Promise<NotificationItem[]> {
   try {
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (error || !data) return [];
-    return data.map((n) => ({
+    const currentUserId = user?.id || userId;
+
+    let query = supabase.from('notifications').select('*');
+
+    if (currentUserId) {
+      // Both notifications for this customer AND broadcasts where user_id is NULL
+      query = query.or(`user_id.eq.${currentUserId},user_id.is.null`);
+    } else {
+      // If not logged in, retrieve general broadcasts where user_id IS NULL
+      query = query.is('user_id', null);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('Error fetching notifications from Supabase:', error);
+      return [];
+    }
+
+    if (!data) return [];
+
+    return data.map((n: any) => ({
       id: n.id,
       user_id: n.user_id,
-      title: n.title,
-      message: n.message,
+      title: n.title || 'Notification',
+      message: n.message || '',
       type: n.type || 'system',
+      order_id: n.order_id || null,
       is_read: Boolean(n.is_read),
       read: Boolean(n.is_read),
-      created_at: n.created_at,
+      created_at: n.created_at || new Date().toISOString(),
     }));
   } catch (err) {
+    console.warn('Error in getCustomerNotifications:', err);
     return [];
   }
 }
 
-export async function markNotificationAsRead(id: string): Promise<void> {
+export async function markNotificationAsRead(id: string, userId?: string): Promise<void> {
   try {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+    let targetUserId = userId;
+    if (!targetUserId) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      targetUserId = user?.id;
+    }
+
+    let query = supabase.from('notifications').update({ is_read: true }).eq('id', id);
+    if (targetUserId) {
+      query = query.eq('user_id', targetUserId);
+    }
+    const { error } = await query;
+    if (error) {
+      console.warn('Note on marking notification as read in database:', error?.message);
+    }
   } catch (err) {
     console.warn('Error marking notification as read:', err);
   }
 }
 
 // ----------------- SUPPORT TICKETS & CHAT -----------------
-export async function getCustomerTickets(customerId: string): Promise<SupportTicket[]> {
+export type ValidSupportCategory =
+  | 'order'
+  | 'payment'
+  | 'delivery'
+  | 'missing_food'
+  | 'refund'
+  | 'other';
+
+export const VALID_SUPPORT_CATEGORIES: ValidSupportCategory[] = [
+  'order',
+  'payment',
+  'delivery',
+  'missing_food',
+  'refund',
+  'other',
+];
+
+export const SUPPORT_CATEGORY_OPTIONS: { value: ValidSupportCategory; label: string }[] = [
+  { value: 'order', label: 'Order Problem' },
+  { value: 'payment', label: 'Payment Problem' },
+  { value: 'delivery', label: 'Delivery Problem' },
+  { value: 'missing_food', label: 'Missing Food' },
+  { value: 'refund', label: 'Refund Request' },
+  { value: 'other', label: 'Other' },
+];
+
+export function normalizeSupportCategory(rawCategory?: string | null): ValidSupportCategory {
+  if (!rawCategory) return 'other';
+  const val = rawCategory.toLowerCase().trim().replace(/[\s\-_]+/g, '_');
+
+  if (val === 'order' || val.includes('order')) return 'order';
+  if (val === 'payment' || val.includes('pay')) return 'payment';
+  if (val === 'delivery' || val.includes('deliver') || val.includes('shipping')) return 'delivery';
+  if (val === 'missing_food' || val.includes('missing') || val.includes('food') || val.includes('restaurant')) return 'missing_food';
+  if (val === 'refund' || val.includes('refund') || val.includes('return')) return 'refund';
+  if (val === 'other' || val === 'general' || val.includes('inquiry') || val.includes('feedback') || val.includes('complaint') || val.includes('technical') || val.includes('account')) return 'other';
+
+  if (VALID_SUPPORT_CATEGORIES.includes(val as ValidSupportCategory)) {
+    return val as ValidSupportCategory;
+  }
+  return 'other';
+}
+
+export function getSupportCategoryLabel(category?: string | null): string {
+  const norm = normalizeSupportCategory(category);
+  const found = SUPPORT_CATEGORY_OPTIONS.find((o) => o.value === norm);
+  return found ? found.label : 'Other';
+}
+
+export async function getCustomerTickets(customerId?: string): Promise<SupportTicket[]> {
   try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const targetId = user?.id || customerId;
+    if (!targetId) return [];
+
     const { data, error } = await supabase
       .from('support_tickets')
       .select('*')
-      .eq('customer_id', customerId)
+      .eq('customer_id', targetId)
       .order('created_at', { ascending: false });
 
-    if (error || !data) return [];
-    return data;
-  } catch (err) {
+    if (error) {
+      console.error("SUPPORT ERROR", {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+      });
+      return [];
+    }
+    return (data as SupportTicket[]) || [];
+  } catch (err: any) {
+    console.error("SUPPORT ERROR", { message: err?.message });
     return [];
   }
 }
 
 export async function getTicketMessages(ticketId: string): Promise<SupportMessage[]> {
   try {
+    if (!ticketId || !isValidUuid(ticketId)) return [];
+
     const { data, error } = await supabase
       .from('support_messages')
       .select('*')
       .eq('ticket_id', ticketId)
       .order('created_at', { ascending: true });
 
-    if (error || !data) return [];
-    return data;
-  } catch (err) {
+    if (error) {
+      console.error("SUPPORT ERROR", {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+      });
+      return [];
+    }
+    return (data as SupportMessage[]) || [];
+  } catch (err: any) {
+    console.error("SUPPORT ERROR", { message: err?.message });
     return [];
   }
 }
 
 export async function createSupportTicket(params: {
-  customerId: string;
-  customerName?: string;
-  customerEmail?: string;
+  customerId?: string;
+  orderId?: string | null;
   subject: string;
   category: string;
   priority?: string;
-  initialMessage: string;
-}): Promise<SupportTicket | null> {
+  message: string;
+  attachmentUrl?: string | null;
+}): Promise<{ ticket: SupportTicket | null; error?: string }> {
   try {
-    const ticketPayload = {
-      customer_id: params.customerId,
-      subject: params.subject,
-      category: params.category,
-      priority: params.priority || 'medium',
-      status: 'Open',
+    // 1. Authenticate user via supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user || !user.id || !isValidUuid(user.id)) {
+      console.error("MUNAJ SUPPORT MESSAGE ERROR", {
+        message: authError?.message || 'User must be authenticated to create a support ticket',
+        code: authError?.name || 'AUTH_REQUIRED',
+        details: (authError as any)?.details || authError?.message,
+        hint: 'Please log in to contact MUNAJ Support.',
+      });
+      return { ticket: null, error: 'Please log in to contact MUNAJ Support.' };
+    }
+
+    // 2. Validate category to strictly be one of: order, payment, delivery, missing_food, refund, other
+    const validCategory: ValidSupportCategory = normalizeSupportCategory(params.category);
+
+    // 3. Insert into public.support_tickets using ONLY required fields:
+    // customer_id = auth.uid(), subject, category, priority (and order_id if linked)
+    // Do NOT send a message field into support_tickets.
+    // Let the database default status to open.
+    const ticketPayload: {
+      customer_id: string;
+      subject: string;
+      category: ValidSupportCategory;
+      priority: string;
+      order_id?: string | null;
+    } = {
+      customer_id: user.id,
+      subject: params.subject.trim(),
+      category: validCategory,
+      priority: params.priority || 'normal',
     };
+
+    if (params.orderId && isValidUuid(params.orderId)) {
+      ticketPayload.order_id = params.orderId;
+    }
 
     const { data: ticketData, error: ticketError } = await supabase
       .from('support_tickets')
@@ -967,51 +1207,226 @@ export async function createSupportTicket(params: {
       .single();
 
     if (ticketError || !ticketData) {
-      console.warn('Could not insert support ticket in Supabase:', ticketError);
-      return null;
+      console.error("MUNAJ SUPPORT MESSAGE ERROR", {
+        message: ticketError?.message,
+        code: ticketError?.code,
+        details: ticketError?.details,
+        hint: ticketError?.hint,
+      });
+      return {
+        ticket: null,
+        error: `Supabase Error [${ticketError?.code || 'TICKET_CREATE_ERROR'}]: ${ticketError?.message || 'Failed to create support ticket.'}`,
+      };
     }
 
-    // Insert first message
-    await supabase.from('support_messages').insert({
+    // 4. Retrieve newly created ticket ID and insert customer's actual message into public.support_messages
+    const { error: msgError } = await supabase.from('support_messages').insert({
       ticket_id: ticketData.id,
-      sender_id: params.customerId,
-      message: params.initialMessage,
+      sender_id: user.id,
+      message: params.message.trim(),
+      attachment_url: params.attachmentUrl || null,
+      is_admin_message: false,
     });
 
-    return ticketData;
-  } catch (err) {
-    console.error('Error creating support ticket:', err);
-    return null;
+    if (msgError) {
+      console.error("MUNAJ SUPPORT MESSAGE ERROR", {
+        message: msgError?.message,
+        code: msgError?.code,
+        details: msgError?.details,
+        hint: msgError?.hint,
+      });
+      return {
+        ticket: ticketData as SupportTicket,
+        error: `Ticket opened, but initial message could not be delivered: ${msgError.message}`,
+      };
+    }
+
+    return { ticket: ticketData as SupportTicket };
+  } catch (err: any) {
+    console.error("MUNAJ SUPPORT MESSAGE ERROR", {
+      message: err?.message,
+      code: err?.code || 'UNHANDLED_EXCEPTION',
+      details: err?.details || String(err),
+      hint: err?.hint,
+    });
+    return { ticket: null, error: err?.message || 'Failed to create support ticket.' };
   }
 }
 
 export async function sendSupportMessage(params: {
   ticketId: string;
-  senderId: string;
+  senderId?: string;
   message: string;
-}): Promise<SupportMessage | null> {
+  attachmentUrl?: string | null;
+}): Promise<{ message: SupportMessage | null; error?: string }> {
   try {
+    // 1. Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user || !user.id || !isValidUuid(user.id)) {
+      console.error("MUNAJ SUPPORT MESSAGE ERROR", {
+        message: authError?.message || 'User must be authenticated to send a support message',
+        code: authError?.name || 'AUTH_REQUIRED',
+        details: (authError as any)?.details || authError?.message,
+        hint: 'Please sign in to send messages.',
+      });
+      return {
+        message: null,
+        error: `Supabase Auth Error: ${authError?.message || 'User session not found. Please log in.'}`,
+      };
+    }
+
+    // 2. Validate ticket ID format
+    if (!params.ticketId || !isValidUuid(params.ticketId)) {
+      console.error("MUNAJ SUPPORT MESSAGE ERROR", {
+        message: `Invalid ticket ID: ${params.ticketId}`,
+        code: 'INVALID_TICKET_ID',
+        details: null,
+        hint: 'Selected ticket ID must be a valid UUID.',
+      });
+      return {
+        message: null,
+        error: `Invalid ticket ID (${params.ticketId}). Must be a valid UUID.`,
+      };
+    }
+
+    // 3. Verify that the selected ticket belongs to the authenticated customer
+    const { data: ticketCheck, error: ticketCheckError } = await supabase
+      .from('support_tickets')
+      .select('id, customer_id')
+      .eq('id', params.ticketId)
+      .eq('customer_id', user.id)
+      .single();
+
+    if (ticketCheckError || !ticketCheck) {
+      console.error("MUNAJ SUPPORT MESSAGE ERROR", {
+        message: ticketCheckError?.message || 'Ticket does not exist or does not belong to authenticated customer',
+        code: ticketCheckError?.code || 'TICKET_ACCESS_DENIED',
+        details: ticketCheckError?.details,
+        hint: ticketCheckError?.hint || 'Check if ticket exists and customer_id matches authenticated user.',
+      });
+      return {
+        message: null,
+        error: ticketCheckError
+          ? `Supabase Error [${ticketCheckError.code || 'TICKET_ERROR'}]: ${ticketCheckError.message}`
+          : 'Ticket not found or access denied for your account.',
+      };
+    }
+
+    // 4. Exact message INSERT
+    const insertPayload: {
+      ticket_id: string;
+      sender_id: string;
+      message: string;
+      is_admin_message: boolean;
+      attachment_url?: string | null;
+    } = {
+      ticket_id: params.ticketId,
+      sender_id: user.id,
+      message: params.message.trim(),
+      is_admin_message: false,
+    };
+
+    if (params.attachmentUrl) {
+      insertPayload.attachment_url = params.attachmentUrl;
+    }
+
     const { data, error } = await supabase
       .from('support_messages')
-      .insert({
-        ticket_id: params.ticketId,
-        sender_id: params.senderId,
-        message: params.message,
-      })
+      .insert(insertPayload)
       .select()
       .single();
 
-    if (error || !data) return null;
+    if (error || !data) {
+      console.error("MUNAJ SUPPORT MESSAGE ERROR", {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+      });
+      return {
+        message: null,
+        error: `Supabase Error [${error?.code || 'UNKNOWN'}]: ${error?.message || 'Failed to insert support message'}${error?.details ? ` - ${error.details}` : ''}${error?.hint ? ` (${error.hint})` : ''}`,
+      };
+    }
 
-    // Touch support ticket updated_at
-    await supabase
+    // 5. Update support ticket updated_at & last_message_at
+    try {
+      await supabase
+        .from('support_tickets')
+        .update({
+          updated_at: new Date().toISOString(),
+          last_message_at: new Date().toISOString(),
+        })
+        .eq('id', params.ticketId);
+    } catch {
+      // Ignored if DB trigger updates it
+    }
+
+    return { message: data as SupportMessage };
+  } catch (err: any) {
+    console.error("MUNAJ SUPPORT MESSAGE ERROR", {
+      message: err?.message,
+      code: err?.code || 'UNHANDLED_EXCEPTION',
+      details: err?.details || String(err),
+      hint: err?.hint,
+    });
+    return {
+      message: null,
+      error: `Supabase Error: ${err?.message || String(err)}`,
+    };
+  }
+}
+
+export async function updateTicketStatus(
+  ticketId: string,
+  status: 'open' | 'in_progress' | 'resolved' | 'closed'
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
       .from('support_tickets')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', params.ticketId);
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', ticketId);
 
-    return data;
+    if (error) {
+      console.error("SUPPORT ERROR", {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+      });
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error("SUPPORT ERROR", { message: err?.message });
+    return { success: false, error: err?.message };
+  }
+}
+
+export async function uploadSupportAttachment(userId: string, file: File): Promise<string | null> {
+  try {
+    const fileExt = file.name.split('.').pop() || 'jpg';
+    const filePath = `support_${userId}_${Date.now()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from('support-attachments')
+      .upload(filePath, file);
+
+    if (!uploadError) {
+      const { data: urlData } = supabase.storage
+        .from('support-attachments')
+        .getPublicUrl(filePath);
+      return urlData.publicUrl;
+    }
+    return null;
   } catch (err) {
-    console.error('Error sending support message:', err);
+    console.warn('Attachment upload error:', err);
     return null;
   }
 }
@@ -1088,84 +1503,127 @@ export async function submitContactRequest(params: {
   message: string;
   category?: string;
   customerId?: string | null;
-}): Promise<{ success: boolean; error: string | null }> {
+}): Promise<{ success: boolean; ticket?: SupportTicket | null; error: string | null }> {
   try {
-    const contactPayload = {
-      name: params.name.trim(),
-      email: params.email.trim(),
-      phone: params.phone?.trim() || null,
-      subject: params.subject.trim(),
-      message: params.message.trim(),
-      category: params.category || 'General Inquiry',
-      customer_id: params.customerId || null,
-      status: 'new',
-    };
+    // 1. Verify authentication (required by Supabase support_tickets RLS policy)
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    let inserted = false;
-
-    // 1. Try public.contact_requests
-    try {
-      const { error: reqError } = await supabase
-        .from('contact_requests')
-        .insert(contactPayload);
-      if (!reqError) {
-        inserted = true;
-      } else {
-        console.warn('contact_requests insert attempt returned:', reqError.message);
-      }
-    } catch (e) {
-      console.warn('contact_requests insert exception:', e);
-    }
-
-    // 2. Also try support_tickets so admin sees it in all panels
-    try {
-      const ticketPayload = {
-        customer_id: params.customerId || null,
-        subject: `[Contact Form] ${params.subject.trim()}`,
-        category: params.category || 'General Inquiry',
-        priority: 'medium',
-        status: 'Open',
-      };
-      const { data: ticketData, error: ticketError } = await supabase
-        .from('support_tickets')
-        .insert(ticketPayload)
-        .select()
-        .maybeSingle();
-
-      if (!ticketError && ticketData) {
-        inserted = true;
-        await supabase.from('support_messages').insert({
-          ticket_id: ticketData.id,
-          sender_id: params.customerId || null,
-          sender_name: params.name,
-          message: `Contact Inquiry from ${params.name} (${params.email}, Phone: ${params.phone || 'N/A'}):\n\n${params.message.trim()}`,
-        });
-      }
-    } catch (e) {
-      console.warn('support_tickets sync attempt:', e);
-    }
-
-    if (inserted) {
-      return { success: true, error: null };
-    }
-
-    // Direct fallback insert
-    const { error: fallbackError } = await supabase
-      .from('contact_requests')
-      .insert(contactPayload);
-
-    if (fallbackError) {
+    if (authError || !user || !user.id || !isValidUuid(user.id)) {
+      console.error("MUNAJ CONTACT FORM ERROR", {
+        message: authError?.message || 'User must be authenticated to create a support ticket',
+        code: authError?.name || 'AUTH_REQUIRED',
+        details: (authError as any)?.details || authError?.message,
+        hint: 'Please log in to contact MUNAJ Support.',
+      });
       return {
         success: false,
-        error: 'Unable to send message right now. Please check your connection or call our order line directly.',
+        ticket: null,
+        error: 'Authentication Required: Please sign in or create an account to send your message directly to MUNAJ Support and receive live responses.',
       };
     }
 
-    return { success: true, error: null };
+    // 2. Validate & normalize category for support_tickets (order, payment, delivery, missing_food, refund, other)
+    const validCategory: ValidSupportCategory = normalizeSupportCategory(params.category);
+
+    const ticketPayload: {
+      customer_id: string;
+      subject: string;
+      category: ValidSupportCategory;
+      priority: string;
+    } = {
+      customer_id: user.id,
+      subject: `[Contact Form] ${params.subject.trim()}`,
+      category: validCategory,
+      priority: 'normal',
+    };
+
+    const { data: ticketData, error: ticketError } = await supabase
+      .from('support_tickets')
+      .insert(ticketPayload)
+      .select()
+      .single();
+
+    if (ticketError || !ticketData) {
+      console.error("MUNAJ CONTACT FORM ERROR", {
+        message: ticketError?.message,
+        code: ticketError?.code,
+        details: ticketError?.details,
+        hint: ticketError?.hint,
+      });
+      return {
+        success: false,
+        ticket: null,
+        error: `Supabase Error [${ticketError?.code || 'TICKET_CREATE_ERROR'}]: ${ticketError?.message || 'Failed to create support ticket.'}`,
+      };
+    }
+
+    // 3. Format message with all contact form details
+    const formattedMessage = [
+      `Customer Contact Inquiry`,
+      `• Full Name: ${params.name.trim()}`,
+      `• Email: ${params.email.trim()}`,
+      `• Phone: ${params.phone?.trim() || 'Not provided'}`,
+      `• Inquiry Topic: ${params.category || 'General Inquiry'}`,
+      `• Subject: ${params.subject.trim()}`,
+      `\nMessage:\n${params.message.trim()}`,
+    ].join('\n');
+
+    // 4. Insert into public.support_messages
+    const { error: msgError } = await supabase
+      .from('support_messages')
+      .insert({
+        ticket_id: ticketData.id,
+        sender_id: user.id,
+        message: formattedMessage,
+        is_admin_message: false,
+      });
+
+    if (msgError) {
+      console.error("MUNAJ CONTACT FORM ERROR", {
+        message: msgError?.message,
+        code: msgError?.code,
+        details: msgError?.details,
+        hint: msgError?.hint,
+      });
+      return {
+        success: false,
+        ticket: null,
+        error: `Supabase Message Error [${msgError?.code || 'MSG_INSERT_ERROR'}]: ${msgError?.message || 'Failed to record message body.'}`,
+      };
+    }
+
+    // 5. Touch ticket updated_at and last_message_at
+    try {
+      await supabase
+        .from('support_tickets')
+        .update({
+          updated_at: new Date().toISOString(),
+          last_message_at: new Date().toISOString(),
+        })
+        .eq('id', ticketData.id);
+    } catch {
+      // Trigger handles timestamp if present
+    }
+
+    return {
+      success: true,
+      ticket: ticketData as SupportTicket,
+      error: null,
+    };
   } catch (err: any) {
+    console.error("MUNAJ CONTACT FORM ERROR", {
+      message: err?.message,
+      code: err?.code || 'UNHANDLED_EXCEPTION',
+      details: err?.details || String(err),
+      hint: err?.hint,
+    });
     return {
       success: false,
-      error: 'Unable to send message right now. Please try again.',
+      ticket: null,
+      error: `Supabase Error: ${err?.message || String(err)}`,
     };
   }
 }

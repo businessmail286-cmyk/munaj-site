@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Phone,
   Mail,
@@ -7,20 +7,27 @@ import {
   Send,
   CheckCircle2,
   AlertCircle,
-  HelpCircle,
   ChevronDown,
   MessageCircle,
+  LogIn,
+  ShieldCheck,
 } from 'lucide-react';
-import { WebsiteSettings } from '../types';
+import { WebsiteSettings, SupportTicket } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { submitContactRequest } from '../lib/supabase';
 
 interface ContactViewProps {
   settings: WebsiteSettings;
+  setCurrentTab?: (tab: any) => void;
+  openAuthModal?: () => void;
 }
 
-export const ContactView: React.FC<ContactViewProps> = ({ settings }) => {
+export const ContactView: React.FC<ContactViewProps> = ({
+  settings,
+  setCurrentTab,
+  openAuthModal,
+}) => {
   const { user, profile } = useAuth();
   const { showToast } = useToast();
 
@@ -32,8 +39,17 @@ export const ContactView: React.FC<ContactViewProps> = ({ settings }) => {
   const [category, setCategory] = useState('General Inquiry');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [createdTicket, setCreatedTicket] = useState<SupportTicket | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
+  // Auto-populate user details when authenticated profile changes
+  useEffect(() => {
+    if (profile?.full_name && !name) setName(profile.full_name);
+    if (user?.email && !email) setEmail(user.email);
+    if (profile?.phone && !phone) setPhone(profile.phone);
+  }, [user, profile]);
 
   const faqs = [
     {
@@ -56,8 +72,44 @@ export const ContactView: React.FC<ContactViewProps> = ({ settings }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) return;
+    setSubmitError(null);
 
+    // 1. Validation
+    if (!name.trim()) {
+      setSubmitError('Please enter your full name.');
+      showToast('error', 'Validation Error', 'Please enter your full name.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim() || !emailRegex.test(email.trim())) {
+      setSubmitError('Please enter a valid email address.');
+      showToast('error', 'Validation Error', 'Please enter a valid email address.');
+      return;
+    }
+
+    if (!subject.trim()) {
+      setSubmitError('Please provide a subject for your inquiry.');
+      showToast('error', 'Validation Error', 'Please provide a subject.');
+      return;
+    }
+
+    if (!message.trim() || message.trim().length < 5) {
+      setSubmitError('Please write a message with at least 5 characters.');
+      showToast('error', 'Validation Error', 'Please write a message.');
+      return;
+    }
+
+    // 2. Check authentication required by Supabase RLS policies
+    if (!user) {
+      const authNotice = 'Please sign in or create an account so your message reaches MUNAJ Support and you can receive live replies.';
+      setSubmitError(authNotice);
+      showToast('info', 'Sign in Required', authNotice);
+      openAuthModal?.();
+      return;
+    }
+
+    // 3. Submit to Supabase
     setLoading(true);
 
     try {
@@ -68,19 +120,25 @@ export const ContactView: React.FC<ContactViewProps> = ({ settings }) => {
         subject: subject.trim(),
         message: message.trim(),
         category,
-        customerId: user?.id || null,
+        customerId: user.id,
       });
 
-      if (res.error) {
-        showToast('error', 'Notice', res.error);
+      if (res.error || !res.success) {
+        const errorMsg = res.error || 'Failed to submit contact message to Supabase.';
+        setSubmitError(errorMsg);
+        showToast('error', 'Submission Failed', errorMsg);
       } else {
+        setCreatedTicket(res.ticket || null);
         setSubmitted(true);
-        showToast('success', 'Message Sent!', 'Our kitchen support team will contact you shortly.');
+        setSubmitError(null);
+        setSubject('');
+        setMessage('');
+        showToast('success', 'Message Sent to MUNAJ!', 'Your inquiry has been logged with our customer care team.');
       }
     } catch (err: any) {
-      console.warn('Contact form submit warning:', err);
-      setSubmitted(true);
-      showToast('success', 'Message Sent!', 'Our kitchen support team will contact you shortly.');
+      const errMsg = err?.message || String(err);
+      setSubmitError(`Supabase Error: ${errMsg}`);
+      showToast('error', 'Connection Error', errMsg);
     } finally {
       setLoading(false);
     }
@@ -90,6 +148,10 @@ export const ContactView: React.FC<ContactViewProps> = ({ settings }) => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16 space-y-16">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
+        <div className="inline-flex items-center gap-2 bg-amber-500/10 text-amber-600 px-3.5 py-1.5 rounded-full text-xs font-bold border border-amber-500/20">
+          <MessageCircle className="w-4 h-4" />
+          <span>Direct Kitchen & Customer Care</span>
+        </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-neutral-900 font-display">
           We'd Love to Hear From You
         </h1>
@@ -102,7 +164,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ settings }) => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
         {/* Left: Contact Info & Cards */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-neutral-900 text-white rounded-3xl p-6 sm:p-8 border border-neutral-800 space-y-6">
+          <div className="bg-neutral-900 text-white rounded-3xl p-6 sm:p-8 border border-neutral-800 space-y-6 shadow-xl">
             <h3 className="font-bold text-lg font-display text-white border-b border-neutral-800 pb-3">
               Direct Contact Channels
             </h3>
@@ -152,41 +214,145 @@ export const ContactView: React.FC<ContactViewProps> = ({ settings }) => {
                 </div>
               </div>
             </div>
+
+            {/* Live Support Portal Quick Link */}
+            <div className="pt-4 border-t border-neutral-800">
+              <div className="bg-neutral-800/70 p-3.5 rounded-2xl border border-neutral-700 flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                    Live Customer Support
+                  </p>
+                  <p className="text-[11px] text-neutral-400">
+                    Track existing inquiries & live agent messages
+                  </p>
+                </div>
+                {setCurrentTab && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentTab('support');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="text-xs font-bold bg-amber-500 hover:bg-amber-400 text-neutral-950 px-3 py-1.5 rounded-xl shrink-0 transition-colors"
+                  >
+                    Open Chat
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Right: Interactive Form */}
         <div className="lg:col-span-7">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-xs">
-            <h3 className="font-bold text-lg font-display text-neutral-900 pb-3 border-b border-neutral-100 mb-6">
-              Send Us a Message
-            </h3>
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-xs space-y-6">
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+              <h3 className="font-bold text-lg font-display text-neutral-900">
+                Send Us a Message
+              </h3>
+              {user ? (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Signed in as {profile?.full_name || user.email}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={openAuthModal}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200"
+                >
+                  <LogIn className="w-3 h-3" />
+                  Sign In for Live Sync
+                </button>
+              )}
+            </div>
+
+            {/* Guest Info Notice Banner */}
+            {!user && (
+              <div className="bg-amber-50/80 border border-amber-200/80 p-3.5 rounded-2xl flex items-start gap-3 text-xs text-amber-900">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold">Direct Supabase Support Link</p>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    Signing in connects your inquiry directly with the MUNAJ Admin Support Desk, allowing real-time order lookups and two-way messaging in your Customer Portal.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Error Banner */}
+            {submitError && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-2xl text-xs flex items-start gap-3">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold">Error Sending Message</p>
+                  <p className="text-[11px] mt-0.5 font-mono break-all whitespace-pre-wrap text-rose-700">
+                    {submitError}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSubmitError(null)}
+                  className="text-rose-400 hover:text-rose-700 text-xs font-bold shrink-0"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             {submitted ? (
-              <div className="py-12 text-center space-y-4">
-                <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+              <div className="py-8 text-center space-y-4">
+                <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
-                <h4 className="font-bold text-lg text-neutral-900">Inquiry Received!</h4>
-                <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto">
-                  Thank you for reaching out to MUNAJ. Our team will review your inquiry and get back to you via phone or email right away.
-                </p>
-                <button
-                  onClick={() => {
-                    setSubmitted(false);
-                    setSubject('');
-                    setMessage('');
-                  }}
-                  className="mt-4 bg-neutral-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold"
-                >
-                  Send Another Message
-                </button>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-lg text-neutral-900">Inquiry Received & Logged!</h4>
+                  {createdTicket && (
+                    <div className="inline-block bg-neutral-100 text-neutral-800 px-3 py-1 rounded-lg text-xs font-mono font-bold">
+                      Ticket Ref: {createdTicket.ticket_number || `TCK-${createdTicket.id.slice(0, 8).toUpperCase()}`}
+                    </div>
+                  )}
+                  <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto pt-1">
+                    Thank you for contacting MUNAJ. Your message has been sent to our Supabase customer support system and our team will attend to you promptly.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-3">
+                  {setCurrentTab && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentTab('support');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="bg-amber-500 hover:bg-amber-400 text-neutral-950 px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      View in Live Support Portal
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubmitted(false);
+                      setCreatedTicket(null);
+                      setSubject('');
+                      setMessage('');
+                    }}
+                    className="bg-neutral-900 hover:bg-neutral-800 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-colors"
+                  >
+                    Send Another Message
+                  </button>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 mb-1">Your Name</label>
+                    <label className="block text-xs font-bold text-neutral-700 mb-1">
+                      Your Name <span className="text-rose-500">*</span>
+                    </label>
                     <input
                       type="text"
                       required
@@ -211,7 +377,9 @@ export const ContactView: React.FC<ContactViewProps> = ({ settings }) => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 mb-1">Email Address</label>
+                    <label className="block text-xs font-bold text-neutral-700 mb-1">
+                      Email Address <span className="text-rose-500">*</span>
+                    </label>
                     <input
                       type="email"
                       required
@@ -233,12 +401,16 @@ export const ContactView: React.FC<ContactViewProps> = ({ settings }) => {
                       <option value="Event / Bulk Catering">Event / Bulk Catering</option>
                       <option value="Delivery Question">Delivery Question</option>
                       <option value="Feedback & Compliment">Feedback & Compliment</option>
+                      <option value="Order Issue">Order Issue</option>
+                      <option value="Payment Issue">Payment Issue</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-neutral-700 mb-1">Subject</label>
+                  <label className="block text-xs font-bold text-neutral-700 mb-1">
+                    Subject <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     required
@@ -250,7 +422,9 @@ export const ContactView: React.FC<ContactViewProps> = ({ settings }) => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-neutral-700 mb-1">Your Message</label>
+                  <label className="block text-xs font-bold text-neutral-700 mb-1">
+                    Your Message <span className="text-rose-500">*</span>
+                  </label>
                   <textarea
                     required
                     rows={4}
@@ -266,8 +440,8 @@ export const ContactView: React.FC<ContactViewProps> = ({ settings }) => {
                   disabled={loading}
                   className="w-full bg-neutral-900 hover:bg-neutral-800 text-white py-3.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50"
                 >
-                  <Send className="w-4 h-4 text-amber-400" />
-                  <span>{loading ? 'Sending Message...' : 'Send Message to MUNAJ'}</span>
+                  <Send className={`w-4 h-4 text-amber-400 ${loading ? 'animate-bounce' : ''}`} />
+                  <span>{loading ? 'Sending to MUNAJ Support...' : 'Send Message to MUNAJ'}</span>
                 </button>
               </form>
             )}

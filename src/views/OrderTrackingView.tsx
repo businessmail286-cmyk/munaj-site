@@ -184,14 +184,14 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
   if (!order) {
     return (
       <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-4">
-        <Package className="w-12 h-12 text-neutral-400 mx-auto" />
-        <h2 className="text-xl font-bold text-neutral-900">No active order selected</h2>
+        <Package className="w-12 h-12 text-emerald-400 mx-auto" />
+        <h2 className="text-xl font-bold text-[#052E16]">No active order selected</h2>
         <p className="text-xs text-neutral-500">
           You can track orders from your account dashboard or by placing a new order.
         </p>
         <button
           onClick={() => setCurrentTab('menu')}
-          className="bg-neutral-900 text-white px-6 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+          className="bg-[#16A34A] hover:bg-[#15803D] text-white px-6 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
         >
           Browse Menu
         </button>
@@ -210,10 +210,10 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
       {/* Top Banner */}
-      <div className="bg-neutral-900 text-white rounded-3xl p-6 sm:p-8 border border-neutral-800 shadow-xl space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-800">
+      <div className="bg-gradient-to-br from-[#052E16] via-[#0B3D20] to-[#071A0E] text-white rounded-3xl p-6 sm:p-8 border border-[#16A34A]/30 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#0B3D20]">
           <div>
-            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-widest block mb-1">
+            <span className="text-[11px] font-bold text-[#B7FF00] uppercase tracking-widest block mb-1">
               Live Order Tracker
             </span>
             <div className="flex items-center gap-2">
@@ -222,13 +222,13 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
               </h1>
               <button
                 onClick={handleCopyOrderNumber}
-                className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition-colors text-xs flex items-center gap-1 cursor-pointer"
+                className="p-1.5 rounded-lg bg-[#071A0E] hover:bg-[#0B3D20] text-neutral-300 transition-colors text-xs flex items-center gap-1 cursor-pointer border border-[#16A34A]/20"
                 title="Copy order number"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? <Check className="w-3.5 h-3.5 text-[#B7FF00]" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </div>
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="text-xs text-emerald-200 mt-1">
               Placed on {new Date(order.created_at).toLocaleDateString('en-NG', { dateStyle: 'medium' })} at{' '}
               {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </p>
@@ -238,7 +238,7 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
             <button
               onClick={handleManualRefresh}
               disabled={refreshing}
-              className="p-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#071A0E] hover:bg-[#0B3D20] text-[#B7FF00] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-[#16A34A]/30"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
@@ -254,14 +254,14 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
 
       {/* BANK TRANSFER INSTRUCTIONS & VERIFICATION CARD */}
       {isBankTransfer && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-xs space-y-6 animate-in fade-in duration-300">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-emerald-100 shadow-xs space-y-6 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-emerald-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-700 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center shrink-0 border border-emerald-200">
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-neutral-900 text-base font-display">
+                <h3 className="font-bold text-[#052E16] text-base font-display">
                   Bank Transfer Details & Payment Status
                 </h3>
                 <p className="text-xs text-neutral-500">
@@ -273,8 +273,8 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
             {/* Payment Status Badge */}
             <div>
               {isPaid ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold text-xs">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-100 text-[#16A34A] font-extrabold text-xs">
+                  <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
                   Payment Verified & Paid
                 </span>
               ) : isRejected ? (
@@ -283,8 +283,8 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
                   Payment Rejected
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 font-extrabold text-xs">
-                  <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F0FDF4] text-[#0B3D20] font-extrabold text-xs border border-emerald-200">
+                  <Clock className="w-4 h-4 text-[#16A34A] animate-pulse" />
                   Awaiting Payment Verification
                 </span>
               )}
@@ -293,39 +293,39 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
 
           {/* Transfer Instruction Notice */}
           {!isPaid && !isRejected && (
-            <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
-              <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-200 text-[#0B3D20] text-xs flex items-start gap-3">
+              <Info className="w-5 h-5 text-[#16A34A] shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <p className="font-bold text-sm">
                   Transfer the exact amount to the bank account above.
                 </p>
-                <p className="text-amber-800 text-xs leading-relaxed">
-                  Please initiate a bank transfer for <strong>{formatNaira(order.total)}</strong>. After sending, click the <strong>"I Have Made the Transfer"</strong> button below so our cashier can verify and dispatch your food immediately.
+                <p className="text-neutral-600 text-xs leading-relaxed">
+                  Please initiate a bank transfer for <strong className="text-[#052E16]">{formatNaira(order.total)}</strong>. After sending, click the <strong>"I Have Made the Transfer"</strong> button below so our cashier can verify and dispatch your food immediately.
                 </p>
               </div>
             </div>
           )}
 
           {/* Account Details Box */}
-          <div className="bg-neutral-900 text-white rounded-2xl p-5 sm:p-6 space-y-4">
+          <div className="bg-gradient-to-br from-[#052E16] to-[#0B3D20] text-white rounded-2xl p-5 sm:p-6 space-y-4 border border-[#16A34A]/30">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <span className="text-[11px] text-neutral-400 block">Bank Name</span>
+                <span className="text-[11px] text-emerald-200 block">Bank Name</span>
                 <span className="font-bold text-white text-sm">
                   {paymentSettings.bank_name || 'Access Bank'}
                 </span>
               </div>
 
               <div>
-                <span className="text-[11px] text-neutral-400 block">Account Name</span>
+                <span className="text-[11px] text-emerald-200 block">Account Name</span>
                 <span className="font-bold text-white text-sm">
                   {paymentSettings.account_name || 'MUNAJ FOODS'}
                 </span>
               </div>
 
-              <div className="sm:col-span-2 p-3.5 bg-neutral-950 rounded-xl border border-neutral-800 flex items-center justify-between gap-3">
+              <div className="sm:col-span-2 p-3.5 bg-[#071A0E] rounded-xl border border-[#16A34A]/30 flex items-center justify-between gap-3">
                 <div>
-                  <span className="text-[10px] text-amber-400 uppercase font-bold block">
+                  <span className="text-[10px] text-[#B7FF00] uppercase font-bold block">
                     Account Number
                   </span>
                   <span className="font-mono font-extrabold text-lg sm:text-xl tracking-wider text-white">
@@ -336,12 +336,12 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
                   type="button"
                   id="tracking-copy-account-btn"
                   onClick={handleCopyAccountNumber}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-amber-300 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#052E16] hover:bg-[#0B3D20] text-[#B7FF00] text-xs font-bold transition-all cursor-pointer shadow-xs border border-[#16A34A]/40"
                 >
                   {copiedAccount ? (
                     <>
-                      <Check className="w-4 h-4 text-emerald-400" />
-                      <span className="text-emerald-400">Account number copied!</span>
+                      <Check className="w-4 h-4 text-[#B7FF00]" />
+                      <span className="text-[#B7FF00]">Account number copied!</span>
                     </>
                   ) : (
                     <>
@@ -352,13 +352,13 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
                 </button>
               </div>
 
-              <div className="sm:col-span-2 p-3 bg-amber-500/10 rounded-xl border border-amber-500/30 flex items-center justify-between text-xs">
-                <span className="text-amber-200 font-medium">Exact Transfer Amount Due:</span>
-                <span className="font-extrabold text-amber-400 text-base">{formatNaira(order.total)}</span>
+              <div className="sm:col-span-2 p-3 bg-[#16A34A]/15 rounded-xl border border-[#16A34A]/30 flex items-center justify-between text-xs">
+                <span className="text-emerald-200 font-medium">Exact Transfer Amount Due:</span>
+                <span className="font-extrabold text-[#B7FF00] text-base">{formatNaira(order.total)}</span>
               </div>
 
               {paymentSettings.transfer_instructions && (
-                <div className="sm:col-span-2 text-[11px] text-neutral-300 bg-neutral-800/60 p-3 rounded-xl">
+                <div className="sm:col-span-2 text-[11px] text-neutral-300 bg-[#071A0E]/60 p-3 rounded-xl border border-[#16A34A]/20">
                   {paymentSettings.transfer_instructions}
                 </div>
               )}
@@ -370,8 +370,8 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-xs text-neutral-500">
                 {isPendingVerification ? (
-                  <span className="text-emerald-700 font-semibold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="text-[#16A34A] font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
                     Transfer marked for verification. Awaiting restaurant cashier confirmation.
                   </span>
                 ) : (
@@ -386,8 +386,8 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
                 disabled={confirmingTransfer || isPendingVerification}
                 className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs ${
                   isPendingVerification
-                    ? 'bg-neutral-100 text-neutral-500 border border-neutral-200 cursor-default'
-                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
+                    ? 'bg-[#F0FDF4] text-emerald-800 border border-emerald-200 cursor-default'
+                    : 'bg-[#16A34A] hover:bg-[#15803D] text-white shadow-[#16A34A]/20'
                 }`}
               >
                 {confirmingTransfer ? (
@@ -397,7 +397,7 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
                   </>
                 ) : isPendingVerification ? (
                   <>
-                    <Check className="w-4 h-4 text-emerald-600" />
+                    <Check className="w-4 h-4 text-[#16A34A]" />
                     <span>Transfer Confirmation Sent</span>
                   </>
                 ) : (
@@ -415,21 +415,21 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
       {/* Details Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Delivery Details */}
-        <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-xs space-y-4">
-          <h3 className="font-bold text-neutral-900 text-base font-display pb-3 border-b border-neutral-100 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-amber-500" />
+        <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-xs space-y-4">
+          <h3 className="font-bold text-[#052E16] text-base font-display pb-3 border-b border-emerald-100 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-[#16A34A]" />
             <span>Delivery Information</span>
           </h3>
 
           <div className="space-y-3 text-xs">
             <div>
               <span className="text-neutral-400 block text-[10px] uppercase font-semibold">Recipient</span>
-              <span className="font-bold text-neutral-900 text-sm">{order.customer_name}</span>
+              <span className="font-bold text-[#052E16] text-sm">{order.customer_name}</span>
             </div>
 
             <div>
               <span className="text-neutral-400 block text-[10px] uppercase font-semibold">Contact Phone</span>
-              <span className="font-bold text-neutral-900">{order.customer_phone}</span>
+              <span className="font-bold text-[#052E16]">{order.customer_phone}</span>
             </div>
 
             <div>
@@ -447,16 +447,16 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
         </div>
 
         {/* Payment Summary */}
-        <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-xs space-y-4">
-          <h3 className="font-bold text-neutral-900 text-base font-display pb-3 border-b border-neutral-100 flex items-center gap-2">
-            <Banknote className="w-4 h-4 text-amber-500" />
+        <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-xs space-y-4">
+          <h3 className="font-bold text-[#052E16] text-base font-display pb-3 border-b border-emerald-100 flex items-center gap-2">
+            <Banknote className="w-4 h-4 text-[#16A34A]" />
             <span>Payment Breakdown</span>
           </h3>
 
           <div className="space-y-2.5 text-xs">
             <div className="flex justify-between text-neutral-600">
               <span>Payment Mode</span>
-              <span className="font-bold text-neutral-900">{formatPaymentMethodForDisplay(order.payment_method)}</span>
+              <span className="font-bold text-[#052E16]">{formatPaymentMethodForDisplay(order.payment_method)}</span>
             </div>
 
             <div className="flex justify-between text-neutral-600">
@@ -464,10 +464,10 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
               <span
                 className={`font-bold px-2 py-0.5 rounded-md ${
                   isPaid
-                    ? 'text-emerald-700 bg-emerald-50'
+                    ? 'text-[#16A34A] bg-emerald-50 border border-emerald-200'
                     : isRejected
-                    ? 'text-rose-700 bg-rose-50'
-                    : 'text-amber-700 bg-amber-50'
+                    ? 'text-rose-700 bg-rose-50 border border-rose-200'
+                    : 'text-[#0B3D20] bg-[#F0FDF4] border border-emerald-200'
                 }`}
               >
                 {order.payment_status || 'Pending'}
@@ -476,19 +476,19 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
 
             <div className="flex justify-between text-neutral-600">
               <span>Food Subtotal</span>
-              <span className="font-bold text-neutral-900">{formatNaira(order.subtotal)}</span>
+              <span className="font-bold text-[#052E16]">{formatNaira(order.subtotal)}</span>
             </div>
 
             <div className="flex justify-between text-neutral-600">
               <span>Delivery Fee</span>
-              <span className="font-bold text-neutral-900">
+              <span className="font-bold text-[#052E16]">
                 {order.delivery_fee === 0 ? 'FREE' : formatNaira(order.delivery_fee)}
               </span>
             </div>
 
-            <div className="pt-2 border-t border-neutral-100 flex justify-between text-sm font-extrabold text-neutral-900">
+            <div className="pt-2 border-t border-emerald-100 flex justify-between text-sm font-extrabold text-[#052E16]">
               <span>Total Amount</span>
-              <span className="text-amber-600">{formatNaira(order.total)}</span>
+              <span className="text-[#16A34A]">{formatNaira(order.total)}</span>
             </div>
           </div>
         </div>
@@ -496,24 +496,24 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
 
       {/* Ordered Items List */}
       {order.items && order.items.length > 0 && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-xs space-y-4">
-          <h3 className="font-bold text-neutral-900 text-base font-display pb-3 border-b border-neutral-100">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-emerald-100 shadow-xs space-y-4">
+          <h3 className="font-bold text-[#052E16] text-base font-display pb-3 border-b border-emerald-100">
             Ordered Delicacies ({order.items.length})
           </h3>
 
-          <div className="divide-y divide-neutral-100">
+          <div className="divide-y divide-emerald-50">
             {order.items.map((item) => (
               <div key={item.id} className="py-3.5 flex items-center justify-between gap-4 text-xs sm:text-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 font-bold flex items-center justify-center text-xs shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-[#F0FDF4] text-[#16A34A] border border-emerald-200 font-bold flex items-center justify-center text-xs shrink-0">
                     {item.quantity}x
                   </div>
                   <div>
-                    <span className="font-bold text-neutral-900 block">{item.food_name}</span>
+                    <span className="font-bold text-[#052E16] block">{item.food_name}</span>
                     <span className="text-xs text-neutral-400">{formatNaira(item.unit_price)} each</span>
                   </div>
                 </div>
-                <span className="font-extrabold text-neutral-900">
+                <span className="font-extrabold text-[#052E16]">
                   {formatNaira(item.subtotal)}
                 </span>
               </div>
@@ -523,14 +523,14 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
       )}
 
       {/* Help & Support Actions */}
-      <div className="p-6 rounded-3xl bg-neutral-100 border border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="p-6 rounded-3xl bg-[#F0FDF4] border border-emerald-200 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3 text-center sm:text-left">
-          <div className="w-10 h-10 rounded-xl bg-white text-neutral-800 flex items-center justify-center shrink-0 shadow-xs">
-            <Headphones className="w-5 h-5 text-amber-500" />
+          <div className="w-10 h-10 rounded-xl bg-white text-[#16A34A] flex items-center justify-center shrink-0 shadow-xs border border-emerald-200">
+            <Headphones className="w-5 h-5 text-[#16A34A]" />
           </div>
           <div>
-            <h4 className="font-bold text-sm text-neutral-900">Need Help with This Order?</h4>
-            <p className="text-xs text-neutral-500">
+            <h4 className="font-bold text-sm text-[#052E16]">Need Help with This Order?</h4>
+            <p className="text-xs text-neutral-600">
               Our 24/7 kitchen and delivery support team is ready to assist you.
             </p>
           </div>
@@ -545,13 +545,13 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
                 setCurrentTab('contact');
               }
             }}
-            className="w-full sm:w-auto bg-neutral-900 hover:bg-neutral-800 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            className="w-full sm:w-auto bg-[#052E16] hover:bg-[#0B3D20] text-[#B7FF00] px-5 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-[#16A34A]/30"
           >
             Contact Support
           </button>
           <button
             onClick={() => setCurrentTab('menu')}
-            className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-neutral-950 px-5 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            className="w-full sm:w-auto bg-[#16A34A] hover:bg-[#15803D] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer"
           >
             Order More
           </button>

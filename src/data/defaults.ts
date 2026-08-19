@@ -1,4 +1,15 @@
-import { FoodItem, Category, WebsiteSettings, Promotion, Announcement, Testimonial, PaymentSettings } from '../types';
+import { FoodItem, Category, WebsiteSettings, Promotion, Announcement, Testimonial, PaymentSettings, WebsiteBranding } from '../types';
+
+export const DEFAULT_BRANDING: WebsiteBranding = {
+  site_name: 'MUNAJ Foods',
+  logo_url: '',
+  favicon_url: '',
+  primary_color: '#B7FF00',
+  secondary_color: '#050505',
+  accent_color: '#B7FF00',
+  text_color: '#FFFFFF',
+  tagline: 'GOOD FOOD. RIGHT TO YOUR DOOR.',
+};
 
 export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   paystack_enabled: false,

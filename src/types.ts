@@ -99,34 +99,53 @@ export interface NotificationItem {
   title: string;
   message: string;
   type?: 'order' | 'support' | 'promo' | 'system' | string;
+  order_id?: string | null;
   is_read?: boolean;
   read: boolean; // Alias for UI compatibility
   created_at: string;
 }
 
+export type SupportDbCategory =
+  | 'order'
+  | 'payment'
+  | 'delivery'
+  | 'missing_food'
+  | 'refund'
+  | 'other';
+
 export type TicketCategory =
-  | 'Order Issue'
-  | 'Delivery Status'
-  | 'Food Quality'
-  | 'Payment Inquiry'
-  | 'General Inquiry';
+  | SupportDbCategory
+  | 'Order Problem'
+  | 'Payment'
+  | 'Payment Problem'
+  | 'Delivery'
+  | 'Delivery Problem'
+  | 'Food / Restaurant'
+  | 'Missing Food'
+  | 'Account'
+  | 'Refund'
+  | 'Refund Request'
+  | 'Technical Issue'
+  | 'Other'
+  | string;
 
-export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TicketPriority = 'normal' | 'low' | 'high' | 'urgent' | string;
 
-export type TicketStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed';
+export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | string;
 
 export interface SupportTicket {
   id: string;
+  ticket_number?: number | string;
   customer_id: string;
-  customer_name?: string;
-  customer_email?: string;
+  order_id?: string | null;
   subject: string;
   category: TicketCategory | string;
-  status: TicketStatus | string;
-  priority: TicketPriority | string;
-  order_id?: string | null;
+  priority?: TicketPriority | string;
+  status: TicketStatus;
+  assigned_to?: string | null;
   created_at: string;
   updated_at?: string;
+  last_message_at?: string | null;
   messages?: SupportMessage[];
 }
 
@@ -134,9 +153,11 @@ export interface SupportMessage {
   id: string;
   ticket_id: string;
   sender_id: string;
-  sender_role?: 'customer' | 'admin' | 'staff' | string;
-  sender_name?: string;
   message: string;
+  attachment_url?: string | null;
+  is_admin_message: boolean;
+  is_read?: boolean;
+  sender_type?: 'admin' | 'customer' | string;
   created_at: string;
 }
 
@@ -195,6 +216,17 @@ export interface WebsiteSettings {
   updated_at?: string;
 }
 
+export interface WebsiteBranding {
+  site_name: string;
+  logo_url: string;
+  favicon_url: string;
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  text_color: string;
+  tagline: string;
+}
+
 export interface PaymentSettings {
   id?: string;
   paystack_enabled: boolean;
@@ -240,6 +272,7 @@ export type ViewTab =
   | 'order-success'
   | 'order-tracking'
   | 'account'
+  | 'support'
   | 'about'
   | 'contact';
 

@@ -8,6 +8,10 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  authLoadingActive: boolean;
+  authLoadingMode: 'login' | 'signup' | null;
+  startAuthLoading: (mode: 'login' | 'signup') => void;
+  finishAuthLoading: () => void;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
@@ -23,6 +27,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authLoadingActive, setAuthLoadingActive] = useState(false);
+  const [authLoadingMode, setAuthLoadingMode] = useState<'login' | 'signup' | null>(null);
+
+  const startAuthLoading = (mode: 'login' | 'signup') => {
+    setAuthLoadingMode(mode);
+    setAuthLoadingActive(true);
+  };
+
+  const finishAuthLoading = () => {
+    setAuthLoadingActive(false);
+    setAuthLoadingMode(null);
+  };
 
   // Sync profile when user changes
   const syncProfile = async (currentUser: User | null) => {
@@ -105,6 +121,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
+
+  // Realtime subscription for authenticated user's profile status and data changes
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const profileChannel = supabase
+      .channel(`public:profiles:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            setProfile(payload.new as Profile);
+          } else {
+            syncProfile(user);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profileChannel);
+    };
+  }, [user?.id]);
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -197,6 +242,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         session,
         profile,
         loading,
+        authLoadingActive,
+        authLoadingMode,
+        startAuthLoading,
+        finishAuthLoading,
         signIn,
         signUp,
         signOut,

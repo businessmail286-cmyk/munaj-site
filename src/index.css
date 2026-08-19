@@ -1,9 +1,25 @@
 @import "tailwindcss";
 
+:root {
+  --brand-primary: #B7FF00;
+  --brand-secondary: #050505;
+  --brand-accent: #B7FF00;
+  --brand-text: #FFFFFF;
+  --brand-primary-rgb: 183, 255, 0;
+  --brand-secondary-rgb: 5, 5, 5;
+  --brand-accent-rgb: 183, 255, 0;
+}
+
 @layer base {
   html {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     scroll-behavior: smooth;
+    background-color: #F0FDF4;
+  }
+  
+  ::selection {
+    background-color: #B7FF00;
+    color: #052E16;
   }
 }
 
@@ -18,15 +34,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #F0FDF4;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #86efac;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #f59e0b;
+  background: #16A34A;
 }
+
 

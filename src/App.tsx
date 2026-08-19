@@ -24,7 +24,7 @@ import {
   getAnnouncements,
   getTestimonials,
 } from './lib/supabase';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider, useCart } from './context/CartContext';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -32,6 +32,8 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { FoodModal } from './components/FoodModal';
 import { AuthModal } from './components/AuthModal';
+import { MunajLoadingScreen } from './components/MunajLoadingScreen';
+import { AccountSuspendedScreen } from './components/AccountSuspendedScreen';
 
 import { HomeView } from './views/HomeView';
 import { MenuView } from './views/MenuView';
@@ -48,6 +50,12 @@ import { formatNaira } from './lib/supabase';
 const MunajApp: React.FC = () => {
   const { itemCount, total } = useCart();
   const { showToast } = useToast();
+  const { user, profile, authLoadingActive, authLoadingMode, finishAuthLoading } = useAuth();
+
+  // If the user's status is banned, prevent normal usage and immediately display Account Suspended screen
+  if (user && profile?.status === 'banned' && !authLoadingActive) {
+    return <AccountSuspendedScreen />;
+  }
 
   const [currentTab, setCurrentTab] = useState<ViewTab>('home');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -168,7 +176,7 @@ const MunajApp: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-neutral-50 text-neutral-900 selection:bg-amber-400 selection:text-neutral-950 font-sans antialiased">
+    <div className="min-h-screen flex flex-col bg-[#F0FDF4]/50 text-neutral-900 selection:bg-[#B7FF00] selection:text-[#052E16] font-sans antialiased">
       {/* Global Navigation Bar */}
       <Navbar
         currentTab={currentTab}
@@ -230,7 +238,7 @@ const MunajApp: React.FC = () => {
           />
         )}
 
-        {currentTab === 'account' && (
+        {(currentTab === 'account' || currentTab === 'support') && (
           <AccountView
             setCurrentTab={setCurrentTab}
             onTrackOrder={handleTrackOrderFromAccount}
@@ -238,6 +246,7 @@ const MunajApp: React.FC = () => {
               setAuthDefaultMode('login');
               setIsAuthModalOpen(true);
             }}
+            initialAccountTab={currentTab === 'support' ? 'support' : 'orders'}
             prefilledSupportOrder={prefilledSupportOrder}
           />
         )}
@@ -247,7 +256,14 @@ const MunajApp: React.FC = () => {
         )}
 
         {currentTab === 'contact' && (
-          <ContactView settings={settings} />
+          <ContactView
+            settings={settings}
+            setCurrentTab={setCurrentTab}
+            openAuthModal={() => {
+              setAuthDefaultMode('login');
+              setIsAuthModalOpen(true);
+            }}
+          />
         )}
       </main>
 
@@ -260,18 +276,18 @@ const MunajApp: React.FC = () => {
               setCurrentTab('cart');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className="flex items-center gap-3 bg-neutral-900 hover:bg-neutral-800 text-white pl-4 pr-5 py-3.5 rounded-2xl shadow-2xl border border-neutral-700/80 group transition-all transform hover:-translate-y-0.5"
+            className="flex items-center gap-3 bg-[#052E16] hover:bg-[#0B3D20] text-white pl-4 pr-5 py-3.5 rounded-2xl shadow-2xl border border-[#16A34A]/40 group transition-all transform hover:-translate-y-0.5"
           >
             <div className="relative">
-              <div className="w-9 h-9 rounded-xl bg-amber-500 text-neutral-950 flex items-center justify-center font-bold">
+              <div className="w-9 h-9 rounded-xl bg-[#B7FF00] text-[#052E16] flex items-center justify-center font-bold">
                 <ShoppingBag className="w-5 h-5" />
               </div>
-              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white text-[11px] font-extrabold flex items-center justify-center border-2 border-neutral-900">
+              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#16A34A] text-white text-[11px] font-extrabold flex items-center justify-center border-2 border-[#052E16]">
                 {itemCount}
               </span>
             </div>
             <div className="text-left">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#B7FF00]">
                 Food Tray
               </p>
               <p className="text-xs sm:text-sm font-extrabold text-white">
@@ -299,6 +315,30 @@ const MunajApp: React.FC = () => {
         onClose={() => setIsAuthModalOpen(false)}
         defaultMode={authDefaultMode}
       />
+
+      {/* 15-second Premium Post-Auth Loading Screen */}
+      {authLoadingActive && (
+        <MunajLoadingScreen
+          mode={authLoadingMode}
+          onComplete={() => {
+            const currentMode = authLoadingMode;
+            finishAuthLoading();
+            if (currentMode === 'signup') {
+              showToast(
+                'success',
+                'Account Created!',
+                'Welcome to MUNAJ! You can now track your orders and enjoy faster checkout.'
+              );
+            } else {
+              showToast(
+                'success',
+                'Welcome Back!',
+                'You have successfully signed in.'
+              );
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
