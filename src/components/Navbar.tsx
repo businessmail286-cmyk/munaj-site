@@ -93,8 +93,8 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Main Navbar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+      <div className="max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20 gap-2">
           {/* Brand Logo */}
           <div
             id="brand-logo"
@@ -102,13 +102,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               setCurrentTab('home');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className="flex items-center gap-3 cursor-pointer group select-none"
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer group select-none min-w-0 shrink"
           >
             {branding.logo_url && branding.logo_url.trim() ? (
               <img
                 src={branding.logo_url.trim()}
                 alt={branding.site_name || 'MUNAJ'}
-                className="h-11 w-auto max-w-[140px] object-contain group-hover:scale-105 transition-transform"
+                className="h-9 sm:h-11 w-auto max-w-[110px] sm:max-w-[140px] object-contain group-hover:scale-105 transition-transform shrink-0"
                 onError={(e) => {
                   (e.currentTarget as HTMLElement).style.display = 'none';
                   const fallbackEl = document.getElementById('navbar-logo-fallback');
@@ -119,15 +119,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div
               id="navbar-logo-fallback"
               style={{ display: branding.logo_url && branding.logo_url.trim() ? 'none' : 'flex' }}
-              className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#16A34A] to-[#052E16] items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-900/20 group-hover:scale-105 transition-transform border border-[#B7FF00]/40"
+              className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#16A34A] to-[#052E16] items-center justify-center text-white font-black text-base sm:text-xl shadow-md shadow-emerald-900/20 group-hover:scale-105 transition-transform border border-[#B7FF00]/40 shrink-0"
             >
               {branding.site_name ? branding.site_name.charAt(0).toUpperCase() : 'M'}
             </div>
-            <div className="flex flex-col">
-              <span className="font-black text-2xl tracking-tight text-[#052E16] font-display leading-none">
+            <div className="flex flex-col min-w-0">
+              <span className="font-black text-lg sm:text-2xl tracking-tight text-[#052E16] font-display leading-none truncate max-w-[120px] xs:max-w-[160px] sm:max-w-none">
                 {branding.site_name || 'MUNAJ Foods'}
               </span>
-              <span className="text-[10px] tracking-widest uppercase font-extrabold text-[#16A34A] mt-0.5 max-w-[170px] truncate">
+              <span className="text-[9px] sm:text-[10px] tracking-widest uppercase font-extrabold text-[#16A34A] mt-0.5 max-w-[110px] sm:max-w-[170px] truncate hidden min-[360px]:block">
                 {branding.tagline || 'Nigerian Kitchen'}
               </span>
             </div>
@@ -158,7 +158,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Right Action Icons */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* Notifications Popover */}
             {user && (
               <div className="relative" ref={notifRef}>
@@ -166,11 +166,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   id="notifications-btn"
                   onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
                   aria-label="Notifications"
-                  className="relative p-2.5 rounded-xl text-neutral-700 hover:bg-[#F0FDF4] hover:text-[#16A34A] transition-colors"
+                  className="relative p-1.5 sm:p-2.5 rounded-xl text-neutral-700 hover:bg-[#F0FDF4] hover:text-[#16A34A] transition-colors"
                 >
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#16A34A] text-white text-[10px] font-extrabold rounded-full flex items-center justify-center animate-pulse">
+                    <span className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-[#16A34A] text-white text-[9px] sm:text-[10px] font-extrabold rounded-full flex items-center justify-center animate-pulse">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -178,7 +178,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 {/* Notifications Dropdown */}
                 {notifDropdownOpen && (
-                  <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-emerald-100 py-3 z-50 animate-in fade-in slide-from-top-2 duration-200">
+                  <div className="absolute right-0 mt-3 w-[calc(100vw-24px)] max-w-sm sm:w-96 bg-white rounded-2xl shadow-2xl border border-emerald-100 py-3 z-50 animate-in fade-in slide-from-top-2 duration-200">
                     <div className="px-4 py-2 border-b border-neutral-100 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-[#052E16] text-sm">Notifications</span>
@@ -276,12 +276,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setCurrentTab('cart');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-2.5 bg-[#052E16] hover:bg-[#0B3D20] text-white px-3.5 sm:px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md group border border-[#16A34A]/40"
+              className="flex items-center gap-1.5 sm:gap-2.5 bg-[#052E16] hover:bg-[#0B3D20] text-white px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md group border border-[#16A34A]/40 shrink-0"
             >
               <div className="relative">
-                <ShoppingBag className="w-4 h-4 text-[#B7FF00] group-hover:scale-110 transition-transform" />
+                <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B7FF00] group-hover:scale-110 transition-transform" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2.5 bg-[#16A34A] text-white text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-[#052E16]">
+                  <span className="absolute -top-1.5 -right-2 bg-[#16A34A] text-white text-[9px] sm:text-[10px] font-extrabold w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center border border-[#052E16]">
                     {itemCount}
                   </span>
                 )}
@@ -297,9 +297,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   id="user-account-menu-btn"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-2 rounded-xl border border-emerald-200 hover:bg-[#F0FDF4] transition-colors"
+                  className="flex items-center gap-1.5 sm:gap-2 p-1 sm:px-3 sm:py-2 rounded-xl border border-emerald-200 hover:bg-[#F0FDF4] transition-colors shrink-0"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-[#F0FDF4] text-[#16A34A] border border-[#16A34A]/30 flex items-center justify-center font-extrabold text-xs">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#F0FDF4] text-[#16A34A] border border-[#16A34A]/30 flex items-center justify-center font-extrabold text-xs">
                     {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
                   </div>
                   <span className="text-xs font-bold text-[#052E16] hidden lg:inline max-w-[100px] truncate">
@@ -309,7 +309,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 {/* Account dropdown */}
                 {userDropdownOpen && (
-                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-emerald-100 py-2 z-50">
+                  <div className="absolute right-0 mt-3 w-[calc(100vw-24px)] max-w-xs sm:w-56 bg-white rounded-2xl shadow-xl border border-emerald-100 py-2 z-50">
                     <div className="px-4 py-2.5 border-b border-neutral-100 bg-[#F0FDF4]/50">
                       <p className="text-xs font-bold text-[#052E16] truncate">
                         {profile?.full_name || 'Valued Customer'}
@@ -374,9 +374,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 id="header-sign-in-btn"
                 onClick={() => openAuthModal('login')}
-                className="flex items-center gap-1.5 border border-[#16A34A]/40 hover:border-[#16A34A] bg-[#F0FDF4] hover:bg-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-[#052E16] transition-colors shadow-xs"
+                className="flex items-center gap-1 sm:gap-1.5 border border-[#16A34A]/40 hover:border-[#16A34A] bg-[#F0FDF4] hover:bg-white px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold text-[#052E16] transition-colors shadow-xs shrink-0"
               >
-                <UserIcon className="w-4 h-4 text-[#16A34A]" />
+                <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#16A34A]" />
                 <span>Sign In</span>
               </button>
             )}
@@ -384,10 +384,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Mobile Menu Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-xl text-neutral-700 hover:bg-[#F0FDF4] transition-colors"
+              className="md:hidden p-1.5 sm:p-2 rounded-xl text-neutral-700 hover:bg-[#F0FDF4] transition-colors shrink-0"
               aria-label="Toggle navigation"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6 text-[#052E16]" /> : <MenuIcon className="w-6 h-6 text-[#052E16]" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6 text-[#052E16]" /> : <MenuIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#052E16]" />}
             </button>
           </div>
         </div>

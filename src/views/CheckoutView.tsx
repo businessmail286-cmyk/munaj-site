@@ -271,20 +271,20 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
     paymentSettings.flutterwave_enabled;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 sm:gap-3">
         <button
           onClick={() => setCurrentTab('cart')}
-          className="p-2 rounded-xl border border-emerald-200 hover:bg-[#F0FDF4] text-emerald-800 transition-colors cursor-pointer"
+          className="p-1.5 sm:p-2 rounded-xl border border-emerald-200 hover:bg-[#F0FDF4] text-emerald-800 transition-colors cursor-pointer shrink-0"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#052E16] font-display">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-3xl font-extrabold text-[#052E16] font-display truncate">
             Delivery & Checkout
           </h1>
-          <p className="text-xs text-emerald-800/80 mt-0.5">
+          <p className="text-[11px] sm:text-xs text-emerald-800/80 mt-0.5 leading-relaxed">
             Complete your recipient and delivery details to receive your freshly prepared Nigerian delicacies.
           </p>
         </div>
@@ -302,16 +302,16 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
 
       {/* Guest Notice */}
       {!user && (
-        <div className="p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2.5 text-[#0B3D20]">
             <User className="w-4 h-4 text-[#16A34A] shrink-0" />
-            <span>
-              Ordering as a Guest. <strong>Have an account?</strong> Sign in to auto-fill your saved addresses and track live updates!
+            <span className="text-[11px] sm:text-xs">
+              Ordering as a Guest. <strong>Have an account?</strong> Sign in to auto-fill your saved addresses!
             </span>
           </div>
           <button
             onClick={openAuthModal}
-            className="bg-[#052E16] hover:bg-[#0B3D20] text-[#B7FF00] border border-[#16A34A]/40 px-4 py-2 rounded-xl font-bold transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+            className="bg-[#052E16] hover:bg-[#0B3D20] text-[#B7FF00] border border-[#16A34A]/40 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
           >
             Sign In / Register
           </button>
@@ -319,32 +319,32 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
       )}
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
         {/* Left: Customer Form */}
         <div className="lg:col-span-7">
           <form
             id="checkout-form"
             onSubmit={handlePlaceOrder}
-            className="bg-white rounded-3xl p-6 sm:p-8 border border-emerald-100 shadow-xs space-y-6"
+            className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-emerald-100 shadow-xs space-y-5 sm:space-y-6"
           >
-            <h3 className="font-bold text-[#052E16] text-lg font-display pb-3 border-b border-emerald-100 flex items-center gap-2">
-              <Truck className="w-5 h-5 text-[#16A34A]" />
+            <h3 className="font-bold text-[#052E16] text-base sm:text-lg font-display pb-3 border-b border-emerald-100 flex items-center gap-2">
+              <Truck className="w-4 h-4 sm:w-5 sm:h-5 text-[#16A34A] shrink-0" />
               <span>Recipient & Delivery Address</span>
             </h3>
 
             {errorMessage && (
-              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-rose-900 text-xs shadow-xs" id="checkout-error-container">
-                <AlertCircle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
-                <div className="space-y-1 w-full">
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-rose-900 text-xs shadow-xs" id="checkout-error-container">
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-rose-600 mt-0.5" />
+                <div className="space-y-1 w-full min-w-0">
                   <span className="font-extrabold text-rose-950 block text-xs">Unable to Complete Order</span>
-                  <p className="text-xs text-rose-900 leading-relaxed">
+                  <p className="text-[11px] sm:text-xs text-rose-900 leading-relaxed">
                     {errorMessage}
                   </p>
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
               <div>
                 <label className="block text-xs font-bold text-[#052E16] mb-1">
                   Full Recipient Name <span className="text-rose-500">*</span>
@@ -358,7 +358,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="e.g. Babatunde Adeleke"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 text-[#052E16]"
+                    className="w-full pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 text-[#052E16]"
                   />
                 </div>
               </div>
@@ -376,7 +376,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="e.g. 0801 234 5678"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 text-[#052E16]"
+                    className="w-full pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 text-[#052E16]"
                   />
                 </div>
               </div>
@@ -394,7 +394,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="babatunde@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 text-[#052E16]"
+                  className="w-full pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 text-[#052E16]"
                 />
               </div>
             </div>
@@ -412,7 +412,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
                   placeholder="e.g. Flat 4B, Block 12, Dada Street, Oshodi, Lagos"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 resize-none text-[#052E16]"
+                  className="w-full pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 resize-none text-[#052E16]"
                 />
               </div>
             </div>
@@ -427,15 +427,15 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                   rows={2}
                   value={deliveryNotes}
                   onChange={(e) => setDeliveryNotes(e.target.value)}
-                  placeholder="e.g. Opposite standard pharmacy, call when gate security asks for access code."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 resize-none text-[#052E16]"
+                  placeholder="e.g. Opposite pharmacy, call when gate security asks for access code."
+                  className="w-full pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 resize-none text-[#052E16]"
                 />
               </div>
             </div>
 
             {/* Payment Method Selection */}
-            <div className="pt-4 border-t border-emerald-100 space-y-4">
-              <div className="flex items-center justify-between">
+            <div className="pt-4 border-t border-emerald-100 space-y-3.5 sm:space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-1">
                 <label className="block text-xs font-bold uppercase tracking-wider text-[#052E16]">
                   Payment Method
                 </label>
@@ -445,25 +445,25 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
               </div>
 
               {!hasAnyPaymentMethod ? (
-                <div className="p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-200 text-emerald-800 text-xs">
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-200 text-emerald-800 text-xs">
                   Payment methods are currently being configured by MUNAJ Kitchen. Please call our hotline to complete your order.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                   {/* Bank Transfer */}
                   {paymentSettings.bank_transfer_enabled && (
                     <div
                       id="pay-method-bank"
                       onClick={() => setPaymentMethod('bank_transfer')}
-                      className={`p-4 rounded-2xl border-2 cursor-pointer flex flex-col justify-between transition-all ${
+                      className={`p-3.5 sm:p-4 rounded-2xl border-2 cursor-pointer flex flex-col justify-between transition-all ${
                         paymentMethod === 'bank_transfer'
                           ? 'border-[#16A34A] bg-[#F0FDF4] shadow-xs'
                           : 'border-emerald-100 bg-white hover:border-emerald-300'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#16A34A] flex items-center justify-center shrink-0">
-                          <Building2 className="w-5 h-5" />
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 text-[#16A34A] flex items-center justify-center shrink-0">
+                          <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div className="w-5 h-5 rounded-full border-2 border-[#16A34A] flex items-center justify-center mt-1">
                           {paymentMethod === 'bank_transfer' && (
@@ -471,14 +471,14 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                           )}
                         </div>
                       </div>
-                      <div className="mt-3">
-                        <h4 className="font-bold text-sm text-[#052E16] flex items-center gap-1.5">
+                      <div className="mt-2.5 sm:mt-3">
+                        <h4 className="font-bold text-xs sm:text-sm text-[#052E16] flex items-center gap-1.5">
                           <span>Bank Transfer</span>
-                          <span className="text-[10px] bg-[#16A34A] text-white font-extrabold px-1.5 py-0.5 rounded-md">
+                          <span className="text-[9px] sm:text-[10px] bg-[#16A34A] text-white font-extrabold px-1.5 py-0.5 rounded-md">
                             Direct
                           </span>
                         </h4>
-                        <p className="text-xs text-neutral-500 mt-0.5">
+                        <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5">
                           Transfer directly to our official bank account.
                         </p>
                       </div>
@@ -490,15 +490,15 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                     <div
                       id="pay-method-cod"
                       onClick={() => setPaymentMethod('cod')}
-                      className={`p-4 rounded-2xl border-2 cursor-pointer flex flex-col justify-between transition-all ${
+                      className={`p-3.5 sm:p-4 rounded-2xl border-2 cursor-pointer flex flex-col justify-between transition-all ${
                         paymentMethod === 'cod'
                           ? 'border-[#16A34A] bg-[#F0FDF4] shadow-xs'
                           : 'border-emerald-100 bg-white hover:border-emerald-300'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#16A34A] flex items-center justify-center shrink-0">
-                          <Banknote className="w-5 h-5" />
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 text-[#16A34A] flex items-center justify-center shrink-0">
+                          <Banknote className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div className="w-5 h-5 rounded-full border-2 border-[#16A34A] flex items-center justify-center mt-1">
                           {paymentMethod === 'cod' && (
@@ -506,11 +506,11 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                           )}
                         </div>
                       </div>
-                      <div className="mt-3">
-                        <h4 className="font-bold text-sm text-[#052E16]">
+                      <div className="mt-2.5 sm:mt-3">
+                        <h4 className="font-bold text-xs sm:text-sm text-[#052E16]">
                           Cash on Delivery
                         </h4>
-                        <p className="text-xs text-neutral-500 mt-0.5">
+                        <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5">
                           Pay with cash or card swipe POS upon food handover.
                         </p>
                       </div>
@@ -522,15 +522,15 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                     <div
                       id="pay-method-paystack"
                       onClick={() => setPaymentMethod('paystack')}
-                      className={`p-4 rounded-2xl border-2 cursor-pointer flex flex-col justify-between transition-all ${
+                      className={`p-3.5 sm:p-4 rounded-2xl border-2 cursor-pointer flex flex-col justify-between transition-all ${
                         paymentMethod === 'paystack'
                           ? 'border-[#16A34A] bg-[#F0FDF4] shadow-xs'
                           : 'border-emerald-100 bg-white hover:border-emerald-300'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-700 flex items-center justify-center shrink-0">
-                          <CreditCard className="w-5 h-5" />
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/15 text-blue-700 flex items-center justify-center shrink-0">
+                          <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div className="w-5 h-5 rounded-full border-2 border-[#16A34A] flex items-center justify-center mt-1">
                           {paymentMethod === 'paystack' && (
@@ -538,14 +538,14 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                           )}
                         </div>
                       </div>
-                      <div className="mt-3">
-                        <h4 className="font-bold text-sm text-[#052E16] flex items-center gap-1.5">
+                      <div className="mt-2.5 sm:mt-3">
+                        <h4 className="font-bold text-xs sm:text-sm text-[#052E16] flex items-center gap-1.5">
                           <span>Paystack</span>
-                          <span className="text-[10px] bg-blue-100 text-blue-800 font-extrabold px-1.5 py-0.5 rounded-md">
+                          <span className="text-[9px] sm:text-[10px] bg-blue-100 text-blue-800 font-extrabold px-1.5 py-0.5 rounded-md">
                             Online
                           </span>
                         </h4>
-                        <p className="text-xs text-neutral-500 mt-0.5">
+                        <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5">
                           Pay securely with Debit Card, USSD, or Bank Account.
                         </p>
                       </div>
@@ -557,15 +557,15 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                     <div
                       id="pay-method-flutterwave"
                       onClick={() => setPaymentMethod('flutterwave')}
-                      className={`p-4 rounded-2xl border-2 cursor-pointer flex flex-col justify-between transition-all ${
+                      className={`p-3.5 sm:p-4 rounded-2xl border-2 cursor-pointer flex flex-col justify-between transition-all ${
                         paymentMethod === 'flutterwave'
                           ? 'border-[#16A34A] bg-[#F0FDF4] shadow-xs'
                           : 'border-emerald-100 bg-white hover:border-emerald-300'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center shrink-0">
-                          <Zap className="w-5 h-5" />
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center shrink-0">
+                          <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div className="w-5 h-5 rounded-full border-2 border-[#16A34A] flex items-center justify-center mt-1">
                           {paymentMethod === 'flutterwave' && (
@@ -573,14 +573,14 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                           )}
                         </div>
                       </div>
-                      <div className="mt-3">
-                        <h4 className="font-bold text-sm text-[#052E16] flex items-center gap-1.5">
+                      <div className="mt-2.5 sm:mt-3">
+                        <h4 className="font-bold text-xs sm:text-sm text-[#052E16] flex items-center gap-1.5">
                           <span>Flutterwave</span>
-                          <span className="text-[10px] bg-amber-100 text-amber-800 font-extrabold px-1.5 py-0.5 rounded-md">
+                          <span className="text-[9px] sm:text-[10px] bg-amber-100 text-amber-800 font-extrabold px-1.5 py-0.5 rounded-md">
                             Instant
                           </span>
                         </h4>
-                        <p className="text-xs text-neutral-500 mt-0.5">
+                        <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5">
                           Pay with Cards, Bank Transfer, or Mobile Money.
                         </p>
                       </div>
@@ -591,41 +591,41 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
 
               {/* Dynamic Bank Transfer Information Card */}
               {paymentMethod === 'bank_transfer' && paymentSettings.bank_transfer_enabled && (
-                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#052E16] via-[#0B3D20] to-[#071A0E] text-white border border-[#16A34A]/40 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 shadow-xl">
-                  <div className="flex items-center justify-between pb-3 border-b border-emerald-900/60">
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#052E16] via-[#0B3D20] to-[#071A0E] text-white border border-[#16A34A]/40 space-y-3.5 sm:space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 shadow-xl">
+                  <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-emerald-900/60">
                     <div className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-[#B7FF00]" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#B7FF00]">
-                        Official Bank Account Details
+                      <Building2 className="w-4 h-4 text-[#B7FF00] shrink-0" />
+                      <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#B7FF00]">
+                        Official Bank Account
                       </span>
                     </div>
-                    <span className="text-[11px] text-emerald-200">Nigerian Naira (NGN / ₦)</span>
+                    <span className="text-[10px] sm:text-[11px] text-emerald-200">₦ NGN</span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs">
                     {/* Bank Name */}
                     <div>
-                      <span className="text-[11px] text-emerald-300/80 block">Bank Name</span>
-                      <span className="font-bold text-white text-sm" id="checkout-bank-name">
+                      <span className="text-[10px] sm:text-[11px] text-emerald-300/80 block">Bank Name</span>
+                      <span className="font-bold text-white text-xs sm:text-sm" id="checkout-bank-name">
                         {paymentSettings.bank_name || 'Access Bank'}
                       </span>
                     </div>
 
                     {/* Account Name */}
                     <div>
-                      <span className="text-[11px] text-emerald-300/80 block">Account Name</span>
-                      <span className="font-bold text-white text-sm" id="checkout-account-name">
+                      <span className="text-[10px] sm:text-[11px] text-emerald-300/80 block">Account Name</span>
+                      <span className="font-bold text-white text-xs sm:text-sm" id="checkout-account-name">
                         {paymentSettings.account_name || 'MUNAJ FOODS'}
                       </span>
                     </div>
 
                     {/* Account Number & Copy Button */}
-                    <div className="sm:col-span-2 p-3.5 bg-[#071A0E] rounded-xl border border-emerald-800/60 flex items-center justify-between gap-3">
+                    <div className="sm:col-span-2 p-3 sm:p-3.5 bg-[#071A0E] rounded-xl border border-emerald-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
                       <div>
-                        <span className="text-[10px] text-[#B7FF00] uppercase font-bold block">
+                        <span className="text-[9px] sm:text-[10px] text-[#B7FF00] uppercase font-bold block">
                           Account Number
                         </span>
-                        <span className="font-mono font-extrabold text-lg sm:text-xl tracking-wider text-white" id="checkout-account-number">
+                        <span className="font-mono font-extrabold text-base sm:text-xl tracking-wider text-white" id="checkout-account-number">
                           {paymentSettings.account_number || '1234567890'}
                         </span>
                       </div>
@@ -633,41 +633,33 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                         type="button"
                         id="copy-account-number-btn"
                         onClick={handleCopyAccountNumber}
-                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                        className="flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0"
                       >
                         {copiedAccount ? (
                           <>
-                            <Check className="w-4 h-4 text-[#B7FF00]" />
-                            <span className="text-[#B7FF00]">Account copied!</span>
+                            <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B7FF00]" />
+                            <span className="text-[#B7FF00]">Copied!</span>
                           </>
                         ) : (
                           <>
-                            <Copy className="w-4 h-4" />
-                            <span>Copy Account Number</span>
+                            <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <span>Copy Number</span>
                           </>
                         )}
                       </button>
                     </div>
 
                     {/* Amount */}
-                    <div className="sm:col-span-2 p-3 bg-emerald-950/60 rounded-xl border border-[#16A34A]/40 flex items-center justify-between text-xs">
-                      <span className="text-emerald-100 font-medium">Exact Transfer Amount Due:</span>
-                      <span className="font-extrabold text-[#B7FF00] text-base">{formatNaira(total)}</span>
+                    <div className="sm:col-span-2 p-2.5 sm:p-3 bg-emerald-950/60 rounded-xl border border-[#16A34A]/40 flex items-center justify-between text-xs">
+                      <span className="text-emerald-100 font-medium text-[11px] sm:text-xs">Exact Transfer Due:</span>
+                      <span className="font-extrabold text-[#B7FF00] text-sm sm:text-base">{formatNaira(total)}</span>
                     </div>
 
                     {/* Transfer Instructions */}
                     {paymentSettings.transfer_instructions && (
-                      <div className="sm:col-span-2 flex items-start gap-2 text-[11px] text-emerald-100 bg-[#0B3D20]/80 p-3 rounded-xl border border-emerald-800/40">
-                        <Info className="w-4 h-4 text-[#B7FF00] shrink-0 mt-0.5" />
+                      <div className="sm:col-span-2 flex items-start gap-2 text-[10px] sm:text-[11px] text-emerald-100 bg-[#0B3D20]/80 p-2.5 sm:p-3 rounded-xl border border-emerald-800/40">
+                        <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B7FF00] shrink-0 mt-0.5" />
                         <span>{paymentSettings.transfer_instructions}</span>
-                      </div>
-                    )}
-
-                    {/* Payment Reference Instructions */}
-                    {paymentSettings.payment_reference_instructions && (
-                      <div className="sm:col-span-2 flex items-start gap-2 text-[11px] text-emerald-100 bg-[#0B3D20]/60 p-3 rounded-xl border border-emerald-800/40">
-                        <Sparkles className="w-4 h-4 text-[#B7FF00] shrink-0 mt-0.5" />
-                        <span>{paymentSettings.payment_reference_instructions}</span>
                       </div>
                     )}
                   </div>
@@ -681,11 +673,11 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                   type="button"
                   disabled
                   id="place-order-btn"
-                  className="w-full bg-neutral-300 text-neutral-600 py-4 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 cursor-not-allowed"
+                  className="w-full bg-neutral-300 text-neutral-600 py-3.5 sm:py-4 rounded-2xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-not-allowed"
                 >
                   <span>Place Order Disabled (Account Restricted)</span>
                 </button>
-                <p className="text-center text-[11px] text-amber-800 font-semibold">
+                <p className="text-center text-[10px] sm:text-[11px] text-amber-800 font-semibold">
                   Your account has restricted access. Please contact support to enable ordering.
                 </p>
               </div>
@@ -694,7 +686,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                 type="submit"
                 disabled={loading || !hasAnyPaymentMethod}
                 id="place-order-btn"
-                className="w-full bg-[#16A34A] hover:bg-[#15803D] text-white py-4 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-[#16A34A]/25 hover:shadow-[#16A34A]/35 transition-all disabled:opacity-60 cursor-pointer"
+                className="w-full bg-[#16A34A] hover:bg-[#15803D] text-white py-3.5 sm:py-4 rounded-2xl font-extrabold text-xs sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-[#16A34A]/25 hover:shadow-[#16A34A]/35 transition-all disabled:opacity-60 cursor-pointer"
               >
                 {loading ? (
                   <span>Placing your order...</span>
@@ -711,7 +703,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
 
         {/* Right: Items Review */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-xs space-y-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-emerald-100 shadow-xs space-y-4">
             <h3 className="font-bold text-[#052E16] text-base font-display pb-3 border-b border-emerald-100">
               Items in Your Order ({items.length})
             </h3>

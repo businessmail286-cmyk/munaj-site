@@ -250,9 +250,12 @@ export const MunajLoadingScreen: React.FC<MunajLoadingScreenProps> = ({
   // Lock body scrolling while loading screen is active
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
+    const originalTouchAction = document.body.style.touchAction;
     document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
     return () => {
       document.body.style.overflow = originalOverflow;
+      document.body.style.touchAction = originalTouchAction;
     };
   }, []);
 
@@ -287,53 +290,66 @@ export const MunajLoadingScreen: React.FC<MunajLoadingScreenProps> = ({
   return (
     <div
       id="munaj-customer-loading-screen"
-      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center p-6 select-none transition-all duration-400 ease-out ${
+      className={`fixed inset-0 z-[99999] w-full min-h-[100dvh] h-[100dvh] flex flex-col items-center justify-center select-none overflow-hidden touch-none transition-all duration-400 ease-out ${
         isFadingOut ? 'opacity-0 scale-[0.98] pointer-events-none' : 'opacity-100 scale-100'
       }`}
       style={{
         backgroundColor: '#07120B',
-        backgroundImage: `radial-gradient(circle at 50% 48%, ${secondaryColor}EE 0%, #08150D 60%, #030704 100%)`,
+        backgroundImage: `radial-gradient(circle at 50% 50%, ${secondaryColor}EE 0%, #08150D 60%, #030704 100%)`,
         color: textColor,
+        paddingTop: 'max(16px, env(safe-area-inset-top))',
+        paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+        paddingLeft: 'max(16px, env(safe-area-inset-left))',
+        paddingRight: 'max(16px, env(safe-area-inset-right))',
       }}
       role="status"
       aria-label={`Loading ${siteName}`}
     >
       {/* Dynamic Ambient Glow Backdrop */}
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 sm:w-96 h-80 sm:h-96 rounded-full blur-3xl pointer-events-none transition-opacity duration-700"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 rounded-full blur-3xl pointer-events-none transition-opacity duration-700"
         style={{
           backgroundColor: primaryColor,
-          opacity: 0.18,
+          opacity: 0.16,
         }}
       />
 
-      {/* Main Column Container:
-          MUNAJ Foods
-          ↓
-          ONE central food SVG
-          ↓
-          ONE small animated dot
-          ↓
-          ONE loading message
-      */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-sm w-full mx-auto px-4">
+      {/* Main Responsive Column Container (Perfect Visual Center) */}
+      <div className="relative z-10 flex flex-col items-center justify-center text-center w-full max-w-[340px] sm:max-w-sm md:max-w-md mx-auto px-4 py-2 my-auto">
         
-        {/* 1. Brand Title: MUNAJ Foods (or dynamic branding site_name) */}
+        {/* 1. Brand Title: MUNAJ Foods (Responsively scaled with clamp) */}
         <motion.h1
-          initial={{ opacity: 0, y: -8 }}
+          initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: EASE_BEZIER }}
-          className="text-2xl sm:text-3xl font-black font-display tracking-[0.16em] uppercase mb-8 transition-colors duration-300"
-          style={{ color: textColor }}
+          className="font-black font-display tracking-[0.14em] uppercase transition-colors duration-300 select-none"
+          style={{
+            color: textColor,
+            fontSize: 'clamp(1.125rem, 4vw, 1.625rem)', // 18px on small phones, up to 26px on desktop
+            marginBottom: 'clamp(1rem, 3.5vh, 1.75rem)', // Responsive spacing
+          }}
         >
           {siteName}
         </motion.h1>
 
-        {/* 2. ONE Central Food SVG (Fixed size & position, cycling through Burger -> Pizza -> Fries -> Drink -> Donut -> Burger) */}
-        <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center mb-6">
+        {/* 2. ONE Central Food SVG
+            Slot Dimensions:
+            - Desktop (>1024px): 88px × 88px
+            - Tablet (481px–1024px): 80px × 80px
+            - Mobile (360px–480px): 72px × 72px
+            - Small mobile (<360px): 64px × 64px
+        */}
+        <div
+          className="relative flex items-center justify-center shrink-0"
+          style={{
+            width: 'clamp(64px, 10vw + 32px, 88px)',
+            height: 'clamp(64px, 10vw + 32px, 88px)',
+            marginBottom: 'clamp(0.875rem, 2.5vh, 1.375rem)',
+          }}
+        >
           {/* Subtle soft aura behind the food */}
           <div
-            className="absolute inset-0 rounded-full blur-xl pointer-events-none"
+            className="absolute inset-0 rounded-full blur-lg pointer-events-none"
             style={{
               background: `radial-gradient(circle, ${accentColor}25 0%, ${primaryColor}15 70%, transparent 100%)`,
             }}
@@ -342,11 +358,11 @@ export const MunajLoadingScreen: React.FC<MunajLoadingScreenProps> = ({
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep.id}
-              initial={{ opacity: 0, scale: 0.88, y: 8 }}
+              initial={{ opacity: 0, scale: 0.88, y: 6 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: -6 }}
+              exit={{ opacity: 0, scale: 0.92, y: -5 }}
               transition={{ duration: 0.32, ease: EASE_BEZIER }}
-              className="w-full h-full flex items-center justify-center"
+              className="w-full h-full aspect-square flex items-center justify-center"
             >
               {currentStep.food === 'burger' && <BurgerSvg />}
               {currentStep.food === 'pizza' && <PizzaSvg />}
@@ -358,7 +374,13 @@ export const MunajLoadingScreen: React.FC<MunajLoadingScreenProps> = ({
         </div>
 
         {/* 3. ONE Small Animated Dot */}
-        <div className="flex items-center justify-center mb-4 h-3">
+        <div
+          className="flex items-center justify-center shrink-0"
+          style={{
+            marginBottom: 'clamp(0.625rem, 1.8vh, 0.875rem)',
+            height: '14px',
+          }}
+        >
           <motion.div
             animate={{
               scale: [0.85, 1.35, 0.85],
@@ -369,16 +391,16 @@ export const MunajLoadingScreen: React.FC<MunajLoadingScreenProps> = ({
               repeat: Infinity,
               ease: EASE_BEZIER,
             }}
-            className="w-2 h-2 rounded-full shadow-sm"
+            className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shadow-xs shrink-0"
             style={{
               backgroundColor: accentColor,
-              boxShadow: `0 0 10px ${accentColor}80`,
+              boxShadow: `0 0 8px ${accentColor}80`,
             }}
           />
         </div>
 
-        {/* 4. ONE Loading Message (Changing together with the food) */}
-        <div className="min-h-[1.75rem] flex items-center justify-center">
+        {/* 4. ONE Loading Message (Scales: Mobile 13–14px, Tablet 14–15px, Desktop 15–16px) */}
+        <div className="min-h-[1.5rem] sm:min-h-[1.75rem] flex items-center justify-center w-full px-2">
           <AnimatePresence mode="wait">
             <motion.p
               key={currentStep.id}
@@ -386,8 +408,11 @@ export const MunajLoadingScreen: React.FC<MunajLoadingScreenProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.28, ease: EASE_BEZIER }}
-              className="text-xs sm:text-sm font-semibold tracking-wide"
-              style={{ color: `${textColor}D9` }}
+              className="font-semibold tracking-wide text-center leading-relaxed"
+              style={{
+                color: `${textColor}E6`,
+                fontSize: 'clamp(0.8125rem, 1.5vw + 0.5rem, 1rem)', // 13px on mobile up to 16px on desktop
+              }}
             >
               {displayMessage}
             </motion.p>

@@ -94,20 +94,20 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food, onOpenDetails }) => {
         </div>
 
         {/* Price & Action */}
-        <div className="mt-4 pt-3.5 border-t border-emerald-50 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-[10px] uppercase tracking-wider text-emerald-700/70 font-bold">Price</span>
-            <span className="font-black text-[#052E16] text-lg sm:text-xl">
+        <div className="mt-3.5 sm:mt-4 pt-3 sm:pt-3.5 border-t border-emerald-50 flex items-center justify-between gap-2">
+          <div className="flex flex-col min-w-0">
+            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-emerald-700/70 font-bold">Price</span>
+            <span className="font-black text-[#052E16] text-base sm:text-lg lg:text-xl truncate">
               {formatNaira(food.price)}
             </span>
           </div>
 
-          <div>
+          <div className="shrink-0">
             {isAvailable ? (
               <button
                 id={`add-to-cart-${food.id}`}
                 onClick={handleQuickAdd}
-                className={`relative flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs ${
+                className={`relative flex items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition-all shadow-xs ${
                   addedAnim
                     ? 'bg-[#16A34A] text-white scale-105'
                     : inCartCount > 0
@@ -117,23 +117,23 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food, onOpenDetails }) => {
               >
                 {addedAnim ? (
                   <>
-                    <Check className="w-4 h-4 text-[#B7FF00]" /> Added
+                    <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B7FF00]" /> Added
                   </>
                 ) : inCartCount > 0 ? (
                   <>
                     <span>In Tray ({inCartCount})</span>
-                    <Plus className="w-3.5 h-3.5 text-[#B7FF00]" />
+                    <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#B7FF00]" />
                   </>
                 ) : (
                   <>
-                    <Plus className="w-4 h-4 text-white" />
+                    <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                     <span>Add</span>
                   </>
                 )}
               </button>
             ) : (
-              <span className="text-xs font-semibold text-neutral-400 py-2 px-3 bg-neutral-100 rounded-xl">
-                Currently Unavailable
+              <span className="text-[11px] sm:text-xs font-semibold text-neutral-400 py-1.5 px-2.5 sm:py-2 sm:px-3 bg-neutral-100 rounded-xl">
+                Unavailable
               </span>
             )}
           </div>

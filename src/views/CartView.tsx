@@ -87,24 +87,24 @@ export const CartView: React.FC<CartViewProps> = ({ setCurrentTab }) => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button
             onClick={() => setCurrentTab('menu')}
-            className="p-2 rounded-xl border border-emerald-200 hover:bg-[#F0FDF4] text-emerald-800 transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl border border-emerald-200 hover:bg-[#F0FDF4] text-emerald-800 transition-colors cursor-pointer shrink-0"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#052E16] font-display">
-            Your Food Tray ({items.reduce((a, b) => a + b.quantity, 0)} items)
+          <h1 className="text-xl sm:text-3xl font-extrabold text-[#052E16] font-display truncate">
+            Your Food Tray ({items.reduce((a, b) => a + b.quantity, 0)})
           </h1>
         </div>
 
         <button
           onClick={clearCart}
-          className="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+          className="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
         >
           <Trash2 className="w-3.5 h-3.5" /> Clear Tray
         </button>
@@ -112,18 +112,18 @@ export const CartView: React.FC<CartViewProps> = ({ setCurrentTab }) => {
 
       {/* Free Delivery Bar */}
       {settings.free_delivery_threshold && (
-        <div className="p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-200 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-[#16A34A] text-white flex items-center justify-center shrink-0">
-              <Truck className="w-4 h-4" />
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-200 flex items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#16A34A] text-white flex items-center justify-center shrink-0">
+              <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div>
               {amountForFreeDelivery > 0 ? (
-                <p className="text-xs font-semibold text-[#0B3D20]">
+                <p className="text-[11px] sm:text-xs font-semibold text-[#0B3D20]">
                   Add <span className="font-extrabold text-[#16A34A]">{formatNaira(amountForFreeDelivery)}</span> more to qualify for <span className="underline font-bold">FREE DELIVERY</span>!
                 </p>
               ) : (
-                <p className="text-xs font-bold text-[#16A34A]">
+                <p className="text-[11px] sm:text-xs font-bold text-[#16A34A]">
                   🎉 Congratulations! You have unlocked FREE DELIVERY on this order!
                 </p>
               )}
@@ -133,29 +133,29 @@ export const CartView: React.FC<CartViewProps> = ({ setCurrentTab }) => {
       )}
 
       {/* Layout Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
         {/* Items List */}
-        <div className="lg:col-span-8 space-y-4">
+        <div className="lg:col-span-8 space-y-3 sm:space-y-4">
           {items.map(({ foodItem, quantity, specialInstructions }) => (
             <div
               key={foodItem.id}
-              className="bg-white rounded-2xl p-4 sm:p-5 border border-emerald-100 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+              className="bg-white rounded-2xl p-3.5 sm:p-5 border border-emerald-100 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4"
             >
-              <div className="flex items-center gap-4 flex-1">
+              <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                 <img
                   src={foodItem.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80'}
                   alt={foodItem.name}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border border-emerald-100 shrink-0"
+                  className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl object-cover border border-emerald-100 shrink-0"
                 />
-                <div className="space-y-1">
-                  <h3 className="font-bold text-sm sm:text-base text-[#052E16] leading-snug">
+                <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                  <h3 className="font-bold text-xs sm:text-base text-[#052E16] leading-snug truncate">
                     {foodItem.name}
                   </h3>
                   <p className="text-xs text-[#16A34A] font-semibold">
                     {formatNaira(foodItem.price)} each
                   </p>
                   {specialInstructions && (
-                    <p className="text-[11px] text-neutral-500 italic bg-[#F0FDF4] px-2 py-0.5 rounded-md inline-block border border-emerald-100">
+                    <p className="text-[10px] sm:text-[11px] text-neutral-500 italic bg-[#F0FDF4] px-2 py-0.5 rounded-md inline-block border border-emerald-100 truncate max-w-full">
                       Note: {specialInstructions}
                     </p>
                   )}
@@ -163,22 +163,22 @@ export const CartView: React.FC<CartViewProps> = ({ setCurrentTab }) => {
               </div>
 
               {/* Quantity Stepper & Price */}
-              <div className="flex items-center justify-between w-full sm:w-auto sm:gap-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
-                <div className="flex items-center gap-2 bg-[#F0FDF4] p-1 rounded-xl border border-emerald-200">
+              <div className="flex items-center justify-between w-full sm:w-auto sm:gap-6 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
+                <div className="flex items-center gap-1.5 sm:gap-2 bg-[#F0FDF4] p-1 rounded-xl border border-emerald-200">
                   <button
                     onClick={() => updateQuantity(foodItem.id, quantity - 1)}
-                    className="w-7 h-7 rounded-lg bg-white text-[#052E16] flex items-center justify-center hover:bg-emerald-100 transition-colors shadow-xs cursor-pointer"
+                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white text-[#052E16] flex items-center justify-center hover:bg-emerald-100 transition-colors shadow-xs cursor-pointer"
                   >
-                    <Minus className="w-3.5 h-3.5" />
+                    <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   </button>
-                  <span className="font-bold text-xs text-[#052E16] w-6 text-center">
+                  <span className="font-bold text-xs text-[#052E16] w-5 sm:w-6 text-center">
                     {quantity}
                   </span>
                   <button
                     onClick={() => updateQuantity(foodItem.id, quantity + 1)}
-                    className="w-7 h-7 rounded-lg bg-white text-[#052E16] flex items-center justify-center hover:bg-emerald-100 transition-colors shadow-xs cursor-pointer"
+                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white text-[#052E16] flex items-center justify-center hover:bg-emerald-100 transition-colors shadow-xs cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   </button>
                 </div>
 
@@ -214,7 +214,7 @@ export const CartView: React.FC<CartViewProps> = ({ setCurrentTab }) => {
 
         {/* Order Summary Box */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-md space-y-6">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-emerald-100 shadow-md space-y-5 sm:space-y-6">
             <h3 className="font-bold text-[#052E16] text-lg font-display pb-3 border-b border-emerald-100">
               Order Summary
             </h3>
