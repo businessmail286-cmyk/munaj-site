@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShieldAlert, Headphones, ArrowRight } from 'lucide-react';
+import { useBranding } from '../context/BrandingContext';
 
 interface AccountRestrictedBannerProps {
   onContactSupport: () => void;
@@ -10,6 +11,9 @@ export const AccountRestrictedBanner: React.FC<AccountRestrictedBannerProps> = (
   onContactSupport,
   className = '',
 }) => {
+  const { branding } = useBranding();
+  const siteName = branding.site_name || 'MUNAJ';
+
   return (
     <div
       id="account-restricted-banner"
@@ -29,7 +33,7 @@ export const AccountRestrictedBanner: React.FC<AccountRestrictedBannerProps> = (
             </span>
           </div>
           <p className="text-xs sm:text-sm text-amber-900 leading-relaxed max-w-xl">
-            Your account currently has restricted access. Please contact MUNAJ Customer Support for assistance.
+            Your account currently has restricted access. Please contact {siteName} Customer Support for assistance.
           </p>
         </div>
       </div>
@@ -47,3 +51,4 @@ export const AccountRestrictedBanner: React.FC<AccountRestrictedBannerProps> = (
     </div>
   );
 };
+

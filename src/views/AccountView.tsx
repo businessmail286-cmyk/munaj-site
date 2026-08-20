@@ -313,7 +313,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
 
           {loadingOrders ? (
             <div className="text-center py-12 text-neutral-400 text-xs">
-              Loading your orders from Supabase...
+              Loading your orders...
             </div>
           ) : orders.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center border border-emerald-100 space-y-4">
@@ -552,7 +552,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
             <div className="p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-200 space-y-2">
               <h4 className="font-bold text-[#052E16]">Protected Customer Session</h4>
               <p className="text-neutral-600">
-                Your session is safely authenticated via Supabase Row-Level-Security (RLS). Only you have access to your personal delivery addresses, orders, and support tickets.
+                Your session is safely encrypted and authenticated. Only you have access to your personal delivery addresses, orders, and support tickets.
               </p>
             </div>
 

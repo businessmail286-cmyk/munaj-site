@@ -25,6 +25,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { supabase, createOrder, formatNaira, getPaymentSettings } from '../lib/supabase';
+import { formatCustomerError } from '../lib/errorUtils';
 import { DEFAULT_PAYMENT_SETTINGS } from '../data/defaults';
 import { AccountRestrictedBanner } from '../components/AccountRestrictedBanner';
 
@@ -223,7 +224,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
       const result = await createOrder(orderPayload);
 
       if (result.error || !result.order?.id) {
-        setErrorMessage(result.error || 'Failed to place order.');
+        setErrorMessage(formatCustomerError(result.error, 'Unable to place your order right now. Please try again.'));
         setLoading(false);
         return;
       }
@@ -256,7 +257,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
         deliveryAddress,
         paymentMethod,
       });
-      const errText = `Supabase Error:\nMessage: ${err?.message || 'Unknown error'}\nCode: ${err?.code || 'N/A'}\nDetails: ${err?.details || err?.stack || 'None'}\nHint: ${err?.hint || 'None'}`;
+      const errText = formatCustomerError(err, 'Unable to complete your order right now. Please try again.');
       setErrorMessage(errText);
     } finally {
       setLoading(false);
@@ -334,11 +335,11 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
             {errorMessage && (
               <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-rose-900 text-xs shadow-xs" id="checkout-error-container">
                 <AlertCircle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
-                <div className="space-y-1 w-full overflow-hidden">
-                  <span className="font-extrabold text-rose-950 block text-xs tracking-wider uppercase">ORDER ERROR</span>
-                  <pre className="whitespace-pre-wrap font-mono text-[11px] sm:text-xs text-rose-900 leading-relaxed bg-white/80 p-3 rounded-xl border border-rose-200 overflow-x-auto select-all">
+                <div className="space-y-1 w-full">
+                  <span className="font-extrabold text-rose-950 block text-xs">Unable to Complete Order</span>
+                  <p className="text-xs text-rose-900 leading-relaxed">
                     {errorMessage}
-                  </pre>
+                  </p>
                 </div>
               </div>
             )}
@@ -410,7 +411,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                   id="checkout-address"
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
-                  placeholder="Flat 4B, Block 12, Ocean View Estate, Admiralty Way, Lekki Phase 1, Lagos"
+                  placeholder="e.g. Flat 4B, Block 12, Dada Street, Oshodi, Lagos"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 outline-hidden bg-[#F0FDF4]/30 resize-none text-[#052E16]"
                 />
               </div>

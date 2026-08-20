@@ -27,6 +27,7 @@ import {
   ViewTab,
 } from '../types';
 import { FoodCard } from '../components/FoodCard';
+import { useBranding } from '../context/BrandingContext';
 
 interface HomeViewProps {
   categories?: Category[];
@@ -51,6 +52,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onSelectCategory,
   onOpenFoodModal,
 }) => {
+  const { branding } = useBranding();
+  const siteName = branding.site_name || settings?.site_name || 'MUNAJ';
+  const tagline = branding.tagline || 'GOOD FOOD. RIGHT TO YOUR DOOR.';
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -131,7 +135,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </h1>
 
             <p className="text-emerald-100/90 text-sm sm:text-base max-w-xl leading-relaxed">
-              From smoky firewood jollof to rich soups, grills and suya — order your favorites fresh from MUNAJ.
+              From smoky firewood jollof to rich soups, grills and suya — order your favorites fresh from {siteName}.
             </p>
 
             {/* Action buttons */}

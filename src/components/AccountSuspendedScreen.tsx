@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useBranding } from '../context/BrandingContext';
 import { submitContactRequest } from '../lib/supabase';
 
 interface AccountSuspendedScreenProps {
@@ -23,6 +24,8 @@ interface AccountSuspendedScreenProps {
 export const AccountSuspendedScreen: React.FC<AccountSuspendedScreenProps> = () => {
   const { user, profile, signOut } = useAuth();
   const { showToast } = useToast();
+  const { branding } = useBranding();
+  const siteName = branding.site_name || 'MUNAJ';
 
   const [showInquiryModal, setShowInquiryModal] = useState(false);
   const [inquirySubject, setInquirySubject] = useState('Account Suspension Inquiry');
@@ -33,8 +36,8 @@ export const AccountSuspendedScreen: React.FC<AccountSuspendedScreenProps> = () 
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
 
-  const supportEmail = 'support@munaj.ng';
-  const supportPhone = '+234 801 234 5678';
+  const supportEmail = 'ogonnayaomoke80@gmail.com';
+  const supportPhone = '+234 806 454 4421';
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(supportEmail);
@@ -89,15 +92,31 @@ export const AccountSuspendedScreen: React.FC<AccountSuspendedScreenProps> = () 
     >
       {/* Brand Header */}
       <div className="mb-6 flex items-center gap-2.5">
-        <div className="w-10 h-10 rounded-2xl bg-[#16A34A] text-white flex items-center justify-center shadow-lg border border-[#B7FF00]/40">
-          <span className="font-extrabold text-lg text-[#B7FF00] font-display">M</span>
+        {branding.logo_url && branding.logo_url.trim() ? (
+          <img
+            src={branding.logo_url.trim()}
+            alt={siteName}
+            className="h-10 w-auto max-w-[130px] object-contain"
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = 'none';
+              const fallbackEl = document.getElementById('suspended-logo-fallback');
+              if (fallbackEl) fallbackEl.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div
+          id="suspended-logo-fallback"
+          style={{ display: branding.logo_url && branding.logo_url.trim() ? 'none' : 'flex' }}
+          className="w-10 h-10 rounded-2xl bg-[#16A34A] text-white items-center justify-center shadow-lg border border-[#B7FF00]/40"
+        >
+          <span className="font-extrabold text-lg text-[#B7FF00] font-display">{siteName.charAt(0).toUpperCase()}</span>
         </div>
         <div>
           <span className="font-extrabold text-xl tracking-tight text-white font-display">
-            MUNAJ
+            {siteName}
           </span>
           <span className="block text-[10px] uppercase font-bold tracking-widest text-[#B7FF00]">
-            Kitchen & Delivery
+            {branding.tagline || 'Kitchen & Delivery'}
           </span>
         </div>
       </div>
@@ -121,7 +140,7 @@ export const AccountSuspendedScreen: React.FC<AccountSuspendedScreenProps> = () 
           </h1>
 
           <p className="text-sm sm:text-base text-neutral-300 leading-relaxed max-w-md mx-auto">
-            Your MUNAJ account has been suspended. Please contact Customer Support if you believe this was a mistake.
+            Your {siteName} account has been suspended. Please contact Customer Support if you believe this was a mistake.
           </p>
         </div>
 

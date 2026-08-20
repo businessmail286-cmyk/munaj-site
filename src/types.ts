@@ -274,5 +274,6 @@ export type ViewTab =
   | 'account'
   | 'support'
   | 'about'
-  | 'contact';
+  | 'contact'
+  | 'admin';
 

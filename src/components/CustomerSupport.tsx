@@ -31,6 +31,7 @@ import {
 import { SupportTicket, SupportMessage, Order, TicketCategory, TicketPriority, SupportDbCategory } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { formatCustomerError } from '../lib/errorUtils';
 import {
   supabase,
   getCustomerTickets,
@@ -326,9 +327,9 @@ export const CustomerSupport: React.FC<CustomerSupportProps> = ({
       removeAttachment();
       setSendMessageError(null);
     } else {
-      const errorMsg = res.error || 'Failed to insert support message.';
-      setSendMessageError(errorMsg);
-      showToast('error', 'Supabase Message Error', errorMsg);
+      const formattedMsg = formatCustomerError(res.error, 'Failed to send support message. Please try again.');
+      setSendMessageError(formattedMsg);
+      showToast('error', 'Message Error', formattedMsg);
     }
     setSendingMessage(false);
   };
@@ -373,7 +374,8 @@ export const CustomerSupport: React.FC<CustomerSupportProps> = ({
       setSelectedTicket(res.ticket);
       setShowTicketSelector(false);
     } else {
-      showToast('error', 'Creation Error', res.error || 'Failed to create support ticket.');
+      const createErrMsg = formatCustomerError(res.error, 'Failed to create support ticket. Please try again.');
+      showToast('error', 'Creation Error', createErrMsg);
     }
     setCreatingTicket(false);
   };
@@ -856,13 +858,13 @@ export const CustomerSupport: React.FC<CustomerSupportProps> = ({
                 </div>
               ) : (
                 <div className="p-3 sm:p-4 border-t border-neutral-200 bg-white space-y-2 shrink-0">
-                  {/* Supabase Error Notice */}
+                  {/* Message Error Notice */}
                   {sendMessageError && (
                     <div className="flex items-start gap-2 bg-rose-50 border border-rose-200 text-rose-800 p-2.5 rounded-xl text-xs">
                       <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="font-bold">Error sending reply</p>
-                        <p className="text-[11px] font-mono whitespace-pre-wrap break-all mt-0.5 text-rose-700">
+                        <p className="text-[11px] whitespace-pre-wrap mt-0.5 text-rose-700">
                           {sendMessageError}
                         </p>
                       </div>

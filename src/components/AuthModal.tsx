@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, Mail, Lock, User, Phone, ArrowRight, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useBranding } from '../context/BrandingContext';
+import { formatCustomerError } from '../lib/errorUtils';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,6 +20,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const { signIn, signUp, resetPassword, startAuthLoading } = useAuth();
   const { showToast } = useToast();
+  const { branding } = useBranding();
+  const siteName = branding.site_name || 'MUNAJ';
 
   const initialMode = initialTab || (defaultMode === 'register' ? 'signup' : (defaultMode || 'login'));
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>(initialMode);
@@ -49,7 +53,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       if (mode === 'login') {
         const { error } = await signIn(email.trim(), password);
         if (error) {
-          setErrorMessage(error.message || 'Invalid email or password');
+          setErrorMessage(formatCustomerError(error, 'Invalid email or password. Please check your credentials.'));
         } else {
           onClose();
           startAuthLoading('login');
@@ -68,7 +72,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         const { error } = await signUp(email.trim(), password, fullName.trim(), phone.trim());
         if (error) {
-          setErrorMessage(error.message || 'Failed to create account');
+          setErrorMessage(formatCustomerError(error, 'Unable to create your account. Please check your details and try again.'));
         } else {
           onClose();
           startAuthLoading('signup');
@@ -76,13 +80,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       } else if (mode === 'forgot') {
         const { error } = await resetPassword(email.trim());
         if (error) {
-          setErrorMessage(error.message || 'Failed to send password reset email');
+          setErrorMessage(formatCustomerError(error, 'Failed to send password reset email. Please try again.'));
         } else {
           setForgotSent(true);
         }
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'An unexpected error occurred. Please try again.');
+      setErrorMessage(formatCustomerError(err, 'An unexpected error occurred. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -97,14 +101,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Header */}
         <div className="p-6 pb-4 border-b border-emerald-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#16A34A] to-[#052E16] text-white flex items-center justify-center font-black text-sm border border-[#B7FF00]/40">
-              M
+            {branding.logo_url && branding.logo_url.trim() ? (
+              <img
+                src={branding.logo_url.trim()}
+                alt={siteName}
+                className="h-8 w-auto max-w-[100px] object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                  const fallbackEl = document.getElementById('auth-modal-logo-fallback');
+                  if (fallbackEl) fallbackEl.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div
+              id="auth-modal-logo-fallback"
+              style={{ display: branding.logo_url && branding.logo_url.trim() ? 'none' : 'flex' }}
+              className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#16A34A] to-[#052E16] text-white items-center justify-center font-black text-sm border border-[#B7FF00]/40"
+            >
+              {siteName.charAt(0).toUpperCase()}
             </div>
             <div>
               <h3 className="font-bold text-[#052E16] text-base">
-                {mode === 'login' && 'Sign in to MUNAJ'}
-                {mode === 'signup' && 'Create Customer Account'}
-                {mode === 'forgot' && 'Reset Password'}
+                {mode === 'login' && `Sign in to ${siteName}`}
+                {mode === 'signup' && `Create ${siteName} Account`}
+                {mode === 'forgot' && `Reset ${siteName} Password`}
               </h3>
               <p className="text-xs text-neutral-500">
                 {mode === 'login' && 'Access order tracking, saved addresses & loyalty'}

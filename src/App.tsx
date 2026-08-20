@@ -28,12 +28,14 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider, useCart } from './context/CartContext';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { BrandingProvider, useBranding } from './context/BrandingContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { FoodModal } from './components/FoodModal';
 import { AuthModal } from './components/AuthModal';
 import { MunajLoadingScreen } from './components/MunajLoadingScreen';
 import { AccountSuspendedScreen } from './components/AccountSuspendedScreen';
+import { WhatsAppButton } from './components/WhatsAppButton';
 
 import { HomeView } from './views/HomeView';
 import { MenuView } from './views/MenuView';
@@ -43,6 +45,7 @@ import { OrderTrackingView } from './views/OrderTrackingView';
 import { AccountView } from './views/AccountView';
 import { AboutView } from './views/AboutView';
 import { ContactView } from './views/ContactView';
+import { AdminView } from './views/AdminView';
 import { ShoppingBag } from 'lucide-react';
 import { formatNaira } from './lib/supabase';
 
@@ -51,11 +54,7 @@ const MunajApp: React.FC = () => {
   const { itemCount, total } = useCart();
   const { showToast } = useToast();
   const { user, profile, authLoadingActive, authLoadingMode, finishAuthLoading } = useAuth();
-
-  // If the user's status is banned, prevent normal usage and immediately display Account Suspended screen
-  if (user && profile?.status === 'banned' && !authLoadingActive) {
-    return <AccountSuspendedScreen />;
-  }
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const [currentTab, setCurrentTab] = useState<ViewTab>('home');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -174,6 +173,16 @@ const MunajApp: React.FC = () => {
     setCurrentTab('account');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // If in Admin Portal Tab, render full Admin View & Dashboard
+  if (currentTab === 'admin') {
+    return <AdminView setCurrentTab={setCurrentTab} />;
+  }
+
+  // If the user's status is banned, prevent normal usage and immediately display Account Suspended screen
+  if (user && profile?.status === 'banned' && !authLoadingActive && !isInitialLoading) {
+    return <AccountSuspendedScreen />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F0FDF4]/50 text-neutral-900 selection:bg-[#B7FF00] selection:text-[#052E16] font-sans antialiased">
@@ -298,6 +307,11 @@ const MunajApp: React.FC = () => {
         </div>
       )}
 
+      {/* WhatsApp Customer Support Floating Button */}
+      <WhatsAppButton
+        hasFloatingCart={itemCount > 0 && currentTab !== 'cart' && currentTab !== 'checkout'}
+      />
+
       {/* Global Footer */}
       <Footer settings={settings} setCurrentTab={setCurrentTab} />
 
@@ -316,25 +330,30 @@ const MunajApp: React.FC = () => {
         defaultMode={authDefaultMode}
       />
 
-      {/* 15-second Premium Post-Auth Loading Screen */}
-      {authLoadingActive && (
+      {/* Premium MUNAJ Foods Brand Loading Screen */}
+      {(isInitialLoading || authLoadingActive) && (
         <MunajLoadingScreen
-          mode={authLoadingMode}
+          mode={authLoadingActive ? authLoadingMode : 'initial'}
           onComplete={() => {
-            const currentMode = authLoadingMode;
-            finishAuthLoading();
-            if (currentMode === 'signup') {
-              showToast(
-                'success',
-                'Account Created!',
-                'Welcome to MUNAJ! You can now track your orders and enjoy faster checkout.'
-              );
-            } else {
-              showToast(
-                'success',
-                'Welcome Back!',
-                'You have successfully signed in.'
-              );
+            if (isInitialLoading) {
+              setIsInitialLoading(false);
+            }
+            if (authLoadingActive) {
+              const currentMode = authLoadingMode;
+              finishAuthLoading();
+              if (currentMode === 'signup') {
+                showToast(
+                  'success',
+                  'Account Created!',
+                  'Welcome! You can now track your orders and enjoy faster checkout.'
+                );
+              } else {
+                showToast(
+                  'success',
+                  'Welcome Back!',
+                  'You have successfully signed in.'
+                );
+              }
             }
           }}
         />
@@ -346,14 +365,16 @@ const MunajApp: React.FC = () => {
 // Root Export wrapped with all context providers
 export default function App() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <CartProvider>
-          <NotificationProvider>
-            <MunajApp />
-          </NotificationProvider>
-        </CartProvider>
-      </AuthProvider>
-    </ToastProvider>
+    <BrandingProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <CartProvider>
+            <NotificationProvider>
+              <MunajApp />
+            </NotificationProvider>
+          </CartProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </BrandingProvider>
   );
 }

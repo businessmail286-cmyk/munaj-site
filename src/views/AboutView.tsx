@@ -1,6 +1,7 @@
 import React from 'react';
 import { Flame, ChefHat, Heart, Award, Clock, MapPin, Sparkles, ArrowRight } from 'lucide-react';
 import { WebsiteSettings, ViewTab } from '../types';
+import { useBranding } from '../context/BrandingContext';
 
 interface AboutViewProps {
   settings: WebsiteSettings;
@@ -8,18 +9,21 @@ interface AboutViewProps {
 }
 
 export const AboutView: React.FC<AboutViewProps> = ({ settings, setCurrentTab }) => {
+  const { branding } = useBranding();
+  const siteName = branding.site_name || settings.site_name || 'MUNAJ';
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16 space-y-16">
       {/* Hero */}
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-extrabold uppercase tracking-wider">
-          <Flame className="w-3.5 h-3.5 fill-amber-600 text-amber-600" /> The MUNAJ Story
+          <Flame className="w-3.5 h-3.5 fill-amber-600 text-amber-600" /> The {siteName} Story
         </div>
         <h1 className="text-3xl sm:text-5xl font-extrabold text-neutral-900 font-display leading-tight">
           Preserving the Authentic Heritage of Nigerian Firewood Cooking
         </h1>
         <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">
-          At MUNAJ, we believe that true Nigerian cuisine cannot be rushed or imitated. We honor time-tested cooking methods, natural open wood fires, and indigenous spices to deliver unforgettable dining experiences.
+          At {siteName}, we believe that true authentic cuisine cannot be rushed or imitated. We honor time-tested cooking methods, natural open wood fires, and indigenous spices to deliver unforgettable dining experiences.
         </p>
       </div>
 

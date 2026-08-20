@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { ViewTab, WebsiteSettings } from '../types';
 import { formatNaira } from '../lib/supabase';
+import { useBranding } from '../context/BrandingContext';
 
 interface FooterProps {
   settings: WebsiteSettings;
@@ -24,6 +25,9 @@ export const Footer: React.FC<FooterProps> = ({
   setCurrentTab,
   onSelectCategory,
 }) => {
+  const { branding } = useBranding();
+  const effectiveSiteName = branding.site_name || settings.site_name || 'MUNAJ Foods';
+  const effectiveTagline = branding.tagline || 'GOOD FOOD. RIGHT TO YOUR DOOR.';
   return (
     <footer className="bg-[#071A0E] text-neutral-300 pt-16 pb-12 border-t border-[#0B3D20]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -67,16 +71,32 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Brand Col */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#16A34A] to-[#052E16] flex items-center justify-center text-white font-extrabold text-lg border border-[#B7FF00]/40">
-                M
+              {branding.logo_url && branding.logo_url.trim() ? (
+                <img
+                  src={branding.logo_url.trim()}
+                  alt={effectiveSiteName}
+                  className="h-10 w-auto max-w-[130px] object-contain"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = 'none';
+                    const fallbackEl = document.getElementById('footer-logo-fallback');
+                    if (fallbackEl) fallbackEl.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div
+                id="footer-logo-fallback"
+                style={{ display: branding.logo_url && branding.logo_url.trim() ? 'none' : 'flex' }}
+                className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#16A34A] to-[#052E16] items-center justify-center text-white font-extrabold text-lg border border-[#B7FF00]/40"
+              >
+                {effectiveSiteName.charAt(0).toUpperCase()}
               </div>
               <span className="font-extrabold text-2xl tracking-tight text-white font-display">
-                MUNAJ<span className="text-[#B7FF00]">.</span>
+                {effectiveSiteName}
               </span>
             </div>
             <p className="text-xs text-neutral-400 leading-relaxed">
               {settings.description ||
-                'MUNAJ brings the rich, smoky, and soul-satisfying culinary heritage of Nigeria right to your table. Prepared fresh daily using authentic market ingredients.'}
+                `${effectiveSiteName} brings the rich, smoky, and soul-satisfying culinary heritage of authentic cuisine right to your table. Prepared fresh daily using authentic market ingredients.`}
             </p>
             <div className="pt-2 flex items-center gap-3 text-xs text-neutral-400">
               <Clock className="w-4 h-4 text-[#B7FF00] shrink-0" />
@@ -176,6 +196,17 @@ export const Footer: React.FC<FooterProps> = ({
                   <ChevronRight className="w-3 h-3 text-emerald-600" /> Help & Support
                 </button>
               </li>
+              <li>
+                <button
+                  onClick={() => {
+                    setCurrentTab('admin');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="hover:text-[#B7FF00] text-neutral-300 transition-colors flex items-center gap-1.5 font-bold"
+                >
+                  <ChevronRight className="w-3 h-3 text-[#B7FF00]" /> Admin Portal
+                </button>
+              </li>
             </ul>
           </div>
 
@@ -187,18 +218,24 @@ export const Footer: React.FC<FooterProps> = ({
             <ul className="space-y-3.5 text-xs text-neutral-300">
               <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-[#B7FF00] shrink-0 mt-0.5" />
-                <span>{settings.address}</span>
+                <span>{settings.address || 'No. 15 Dada Street, Oshodi, Lagos, Nigeria'}</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-[#B7FF00] shrink-0" />
-                <a href={`tel:${settings.phone}`} className="hover:text-[#B7FF00] transition-colors">
-                  {settings.phone}
+                <a
+                  href={`tel:${(settings.phone || '+234 806 454 4421').replace(/\s+/g, '')}`}
+                  className="hover:text-[#B7FF00] transition-colors"
+                >
+                  {settings.phone || '+234 806 454 4421'}
                 </a>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-[#B7FF00] shrink-0" />
-                <a href={`mailto:${settings.email}`} className="hover:text-[#B7FF00] transition-colors">
-                  {settings.email}
+                <a
+                  href={`mailto:${settings.email || 'ogonnayaomoke80@gmail.com'}`}
+                  className="hover:text-[#B7FF00] transition-colors"
+                >
+                  {settings.email || 'ogonnayaomoke80@gmail.com'}
                 </a>
               </li>
             </ul>
@@ -207,7 +244,7 @@ export const Footer: React.FC<FooterProps> = ({
 
         {/* Bottom bar */}
         <div className="pt-8 border-t border-[#0B3D20] flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-400 gap-4">
-          <p>© {new Date().getFullYear()} {settings.site_name} Foods Limited. All Rights Reserved.</p>
+          <p>© {new Date().getFullYear()} {effectiveSiteName}. All Rights Reserved.</p>
           <div className="flex items-center gap-1 text-neutral-300">
             <span>Crafted with</span>
             <Heart className="w-3.5 h-3.5 text-[#B7FF00] fill-[#B7FF00]" />

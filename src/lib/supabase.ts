@@ -499,7 +499,7 @@ export async function createOrder(params: CreateOrderParams): Promise<{ order: O
     });
     return {
       order: {} as Order,
-      error: `Supabase Error:\nMessage: ${authError?.message || 'User must be authenticated to place an order'}\nCode: ${authError?.code || 'AUTH_REQUIRED'}\nDetails: ${authError ? JSON.stringify(authError) : 'auth.getUser() returned null'}\nHint: Please sign in to place your order.`,
+      error: 'Please sign in or create an account to place your order.',
     };
   }
 
@@ -699,7 +699,7 @@ export async function createOrder(params: CreateOrderParams): Promise<{ order: O
         rpcArguments: rpcArgs,
       });
 
-      const errString = `Supabase Error:\nMessage: ${orderError?.message || 'Unknown database error'}\nCode: ${orderError?.code || 'N/A'}\nDetails: ${orderError?.details || 'None'}\nHint: ${orderError?.hint || 'None'}`;
+      const errString = 'Unable to place your order right now. Please check your delivery details and try again.';
       return {
         order: {} as Order,
         error: errString,
@@ -749,7 +749,7 @@ export async function createOrder(params: CreateOrderParams): Promise<{ order: O
           itemsToInsert,
         });
 
-        const itemsErrString = `Supabase Error (Order Items):\nMessage: ${itemsError?.message || 'Failed saving items'}\nCode: ${itemsError?.code || 'N/A'}\nDetails: ${itemsError?.details || 'None'}\nHint: ${itemsError?.hint || 'None'}`;
+        const itemsErrString = 'Unable to save order items. Please try again.';
         return {
           order: {} as Order,
           error: itemsErrString,
@@ -833,7 +833,7 @@ export async function createOrder(params: CreateOrderParams): Promise<{ order: O
       orderPayload,
       orderItemsPayload,
     });
-    const catchErrString = `Supabase Error:\nMessage: ${err?.message || 'Unknown runtime error'}\nCode: ${err?.code || 'N/A'}\nDetails: ${err?.details || err?.stack || 'None'}\nHint: ${err?.hint || 'None'}`;
+    const catchErrString = 'Unable to complete your order right now. Please check your connection and try again.';
     return {
       order: {} as Order,
       error: catchErrString,
@@ -1215,7 +1215,7 @@ export async function createSupportTicket(params: {
       });
       return {
         ticket: null,
-        error: `Supabase Error [${ticketError?.code || 'TICKET_CREATE_ERROR'}]: ${ticketError?.message || 'Failed to create support ticket.'}`,
+        error: 'Unable to open support ticket. Please try again.',
       };
     }
 
@@ -1237,7 +1237,7 @@ export async function createSupportTicket(params: {
       });
       return {
         ticket: ticketData as SupportTicket,
-        error: `Ticket opened, but initial message could not be delivered: ${msgError.message}`,
+        error: 'Ticket opened, but your initial message could not be delivered. Please try sending a message in the ticket conversation.',
       };
     }
 
@@ -1249,7 +1249,7 @@ export async function createSupportTicket(params: {
       details: err?.details || String(err),
       hint: err?.hint,
     });
-    return { ticket: null, error: err?.message || 'Failed to create support ticket.' };
+    return { ticket: null, error: 'Failed to create support ticket. Please try again.' };
   }
 }
 
@@ -1275,7 +1275,7 @@ export async function sendSupportMessage(params: {
       });
       return {
         message: null,
-        error: `Supabase Auth Error: ${authError?.message || 'User session not found. Please log in.'}`,
+        error: 'Please sign in or create an account to send support messages.',
       };
     }
 
@@ -1289,7 +1289,7 @@ export async function sendSupportMessage(params: {
       });
       return {
         message: null,
-        error: `Invalid ticket ID (${params.ticketId}). Must be a valid UUID.`,
+        error: 'Support ticket not found. Please refresh the page.',
       };
     }
 
@@ -1310,9 +1310,7 @@ export async function sendSupportMessage(params: {
       });
       return {
         message: null,
-        error: ticketCheckError
-          ? `Supabase Error [${ticketCheckError.code || 'TICKET_ERROR'}]: ${ticketCheckError.message}`
-          : 'Ticket not found or access denied for your account.',
+        error: 'Ticket not found or access is restricted for this conversation.',
       };
     }
 
@@ -1349,7 +1347,7 @@ export async function sendSupportMessage(params: {
       });
       return {
         message: null,
-        error: `Supabase Error [${error?.code || 'UNKNOWN'}]: ${error?.message || 'Failed to insert support message'}${error?.details ? ` - ${error.details}` : ''}${error?.hint ? ` (${error.hint})` : ''}`,
+        error: 'Unable to send message right now. Please check your connection and try again.',
       };
     }
 
@@ -1376,7 +1374,7 @@ export async function sendSupportMessage(params: {
     });
     return {
       message: null,
-      error: `Supabase Error: ${err?.message || String(err)}`,
+      error: 'Unable to send message. Please try again.',
     };
   }
 }
@@ -1556,7 +1554,7 @@ export async function submitContactRequest(params: {
       return {
         success: false,
         ticket: null,
-        error: `Supabase Error [${ticketError?.code || 'TICKET_CREATE_ERROR'}]: ${ticketError?.message || 'Failed to create support ticket.'}`,
+        error: 'Unable to submit your contact message. Please try again.',
       };
     }
 
@@ -1591,7 +1589,7 @@ export async function submitContactRequest(params: {
       return {
         success: false,
         ticket: null,
-        error: `Supabase Message Error [${msgError?.code || 'MSG_INSERT_ERROR'}]: ${msgError?.message || 'Failed to record message body.'}`,
+        error: 'Inquiry received, but message body could not be saved. Please try again.',
       };
     }
 
@@ -1623,7 +1621,7 @@ export async function submitContactRequest(params: {
     return {
       success: false,
       ticket: null,
-      error: `Supabase Error: ${err?.message || String(err)}`,
+      error: 'Unable to submit your contact inquiry right now. Please try again.',
     };
   }
 }

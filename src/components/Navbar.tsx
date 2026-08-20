@@ -13,17 +13,20 @@ import {
   Headphones,
   Sparkles,
   Flame,
+  Shield,
 } from 'lucide-react';
 import { ViewTab } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useNotifications } from '../context/NotificationContext';
+import { useBranding } from '../context/BrandingContext';
 import { formatNaira } from '../lib/supabase';
 
 interface NavbarProps {
   currentTab: ViewTab;
   setCurrentTab: (tab: ViewTab) => void;
   openAuthModal: (initialTab?: 'login' | 'signup') => void;
+  settings?: any;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -33,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const { user, profile, signOut } = useAuth();
   const { itemCount, subtotal, settings } = useCart();
+  const { branding } = useBranding();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -79,10 +83,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <div className="flex items-center gap-4">
             <a
-              href={`tel:${settings.phone}`}
+              href={`tel:${(settings.phone || '+234 806 454 4421').replace(/\s+/g, '')}`}
               className="flex items-center gap-1 text-neutral-200 hover:text-[#B7FF00] transition-colors font-medium"
             >
-              <Phone className="w-3 h-3 text-[#B7FF00]" /> Direct Order Line: {settings.phone}
+              <Phone className="w-3 h-3 text-[#B7FF00]" /> Direct Order Line: {settings.phone || '+234 806 454 4421'}
             </a>
           </div>
         </div>
@@ -100,15 +104,31 @@ export const Navbar: React.FC<NavbarProps> = ({
             }}
             className="flex items-center gap-3 cursor-pointer group select-none"
           >
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#16A34A] to-[#052E16] flex items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-900/20 group-hover:scale-105 transition-transform border border-[#B7FF00]/40">
-              M
+            {branding.logo_url && branding.logo_url.trim() ? (
+              <img
+                src={branding.logo_url.trim()}
+                alt={branding.site_name || 'MUNAJ'}
+                className="h-11 w-auto max-w-[140px] object-contain group-hover:scale-105 transition-transform"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                  const fallbackEl = document.getElementById('navbar-logo-fallback');
+                  if (fallbackEl) fallbackEl.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div
+              id="navbar-logo-fallback"
+              style={{ display: branding.logo_url && branding.logo_url.trim() ? 'none' : 'flex' }}
+              className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#16A34A] to-[#052E16] items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-900/20 group-hover:scale-105 transition-transform border border-[#B7FF00]/40"
+            >
+              {branding.site_name ? branding.site_name.charAt(0).toUpperCase() : 'M'}
             </div>
             <div className="flex flex-col">
               <span className="font-black text-2xl tracking-tight text-[#052E16] font-display leading-none">
-                MUNAJ<span className="text-[#16A34A]">.</span>
+                {branding.site_name || 'MUNAJ Foods'}
               </span>
-              <span className="text-[10px] tracking-widest uppercase font-extrabold text-[#16A34A] mt-0.5">
-                Nigerian Kitchen
+              <span className="text-[10px] tracking-widest uppercase font-extrabold text-[#16A34A] mt-0.5 max-w-[170px] truncate">
+                {branding.tagline || 'Nigerian Kitchen'}
               </span>
             </div>
           </div>
@@ -325,6 +345,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                       >
                         <Headphones className="w-4 h-4 text-emerald-600" /> Customer Support
                       </button>
+                      <button
+                        onClick={() => {
+                          setCurrentTab('admin');
+                          setUserDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs font-bold text-[#3A2B1E] bg-[#FFF6E9] hover:bg-[#FFEBC7] flex items-center gap-2.5 rounded-lg my-1"
+                      >
+                        <Shield className="w-4 h-4 text-[#FF9A3D]" /> Admin Portal
+                      </button>
                     </div>
 
                     <div className="border-t border-neutral-100 pt-1">
@@ -390,6 +419,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="pt-3 border-t border-neutral-100 flex flex-col gap-2">
+            <button
+              onClick={() => {
+                setCurrentTab('admin');
+                setMobileMenuOpen(false);
+              }}
+              className="w-full bg-[#FFF6E9] hover:bg-[#FFEBC7] text-[#3A2B1E] border border-[#F2DFC1] py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2"
+            >
+              <Shield className="w-4 h-4 text-[#FF9A3D]" /> Admin Portal
+            </button>
+
             {user ? (
               <button
                 onClick={() => {

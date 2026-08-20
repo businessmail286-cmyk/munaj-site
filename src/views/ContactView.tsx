@@ -15,7 +15,9 @@ import {
 import { WebsiteSettings, SupportTicket } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useBranding } from '../context/BrandingContext';
 import { submitContactRequest } from '../lib/supabase';
+import { formatCustomerError } from '../lib/errorUtils';
 
 interface ContactViewProps {
   settings: WebsiteSettings;
@@ -30,6 +32,8 @@ export const ContactView: React.FC<ContactViewProps> = ({
 }) => {
   const { user, profile } = useAuth();
   const { showToast } = useToast();
+  const { branding } = useBranding();
+  const siteName = branding.site_name || settings.site_name || 'MUNAJ';
 
   const [name, setName] = useState(profile?.full_name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -102,7 +106,7 @@ export const ContactView: React.FC<ContactViewProps> = ({
 
     // 2. Check authentication required by Supabase RLS policies
     if (!user) {
-      const authNotice = 'Please sign in or create an account so your message reaches MUNAJ Support and you can receive live replies.';
+      const authNotice = `Please sign in or create an account so your message reaches ${siteName} Support and you can receive live replies.`;
       setSubmitError(authNotice);
       showToast('info', 'Sign in Required', authNotice);
       openAuthModal?.();
@@ -124,7 +128,7 @@ export const ContactView: React.FC<ContactViewProps> = ({
       });
 
       if (res.error || !res.success) {
-        const errorMsg = res.error || 'Failed to submit contact message to Supabase.';
+        const errorMsg = formatCustomerError(res.error, 'Failed to submit contact message. Please try again.');
         setSubmitError(errorMsg);
         showToast('error', 'Submission Failed', errorMsg);
       } else {
@@ -133,11 +137,11 @@ export const ContactView: React.FC<ContactViewProps> = ({
         setSubmitError(null);
         setSubject('');
         setMessage('');
-        showToast('success', 'Message Sent to MUNAJ!', 'Your inquiry has been logged with our customer care team.');
+        showToast('success', `Message Sent to ${siteName}!`, 'Your inquiry has been logged with our customer care team.');
       }
     } catch (err: any) {
-      const errMsg = err?.message || String(err);
-      setSubmitError(`Supabase Error: ${errMsg}`);
+      const errMsg = formatCustomerError(err, 'Unable to submit your contact message right now. Please try again.');
+      setSubmitError(errMsg);
       showToast('error', 'Connection Error', errMsg);
     } finally {
       setLoading(false);
@@ -176,7 +180,7 @@ export const ContactView: React.FC<ContactViewProps> = ({
                 </div>
                 <div>
                   <span className="text-[10px] text-neutral-400 uppercase font-bold block">Kitchen Address</span>
-                  <span className="font-medium text-white">{settings.address}</span>
+                  <span className="font-medium text-white">{settings.address || 'No. 15 Dada Street, Oshodi, Lagos, Nigeria'}</span>
                 </div>
               </div>
 
@@ -186,8 +190,27 @@ export const ContactView: React.FC<ContactViewProps> = ({
                 </div>
                 <div>
                   <span className="text-[10px] text-neutral-400 uppercase font-bold block">Order Phone Lines</span>
-                  <a href={`tel:${settings.phone}`} className="font-bold text-amber-400 hover:underline block">
-                    {settings.phone}
+                  <a href={`tel:${(settings.phone || '+234 806 454 4421').replace(/\s+/g, '')}`} className="font-bold text-amber-400 hover:underline block">
+                    {settings.phone || '+234 806 454 4421'}
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[#25D366]/15 text-[#25D366] flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zM12.05 20.21c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.188 8.188 0 0 1-1.26-4.44c0-4.54 3.7-8.24 8.25-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.23 8.24zm4.52-6.17c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.43s-.56-1.34-.76-1.84c-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.84-.86 2.05s.88 2.38 1 2.55c.12.17 1.73 2.65 4.2 3.71.59.25 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.23-.18-.48-.3z" />
+                  </svg>
+                </div>
+                <div>
+                  <span className="text-[10px] text-neutral-400 uppercase font-bold block">WhatsApp Support</span>
+                  <a
+                    href="https://wa.me/2348064544421?text=Hello%20MUNAJ%20Foods%2C%20I%20need%20help%20with%20my%20order."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-[#25D366] hover:underline block"
+                  >
+                    +234 806 454 4421
                   </a>
                 </div>
               </div>
@@ -198,8 +221,8 @@ export const ContactView: React.FC<ContactViewProps> = ({
                 </div>
                 <div>
                   <span className="text-[10px] text-neutral-400 uppercase font-bold block">Customer Email</span>
-                  <a href={`mailto:${settings.email}`} className="font-medium text-white hover:underline block">
-                    {settings.email}
+                  <a href={`mailto:${settings.email || 'ogonnayaomoke80@gmail.com'}`} className="font-medium text-white hover:underline block">
+                    {settings.email || 'ogonnayaomoke80@gmail.com'}
                   </a>
                 </div>
               </div>
@@ -273,9 +296,9 @@ export const ContactView: React.FC<ContactViewProps> = ({
               <div className="bg-amber-50/80 border border-amber-200/80 p-3.5 rounded-2xl flex items-start gap-3 text-xs text-amber-900">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="font-bold">Direct Supabase Support Link</p>
+                  <p className="font-bold">Direct Customer Support</p>
                   <p className="text-[11px] text-amber-800 leading-relaxed">
-                    Signing in connects your inquiry directly with the MUNAJ Admin Support Desk, allowing real-time order lookups and two-way messaging in your Customer Portal.
+                    Signing in connects your inquiry directly with the MUNAJ Customer Support Desk, allowing real-time order lookups and two-way messaging in your Customer Portal.
                   </p>
                 </div>
               </div>
@@ -287,7 +310,7 @@ export const ContactView: React.FC<ContactViewProps> = ({
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold">Error Sending Message</p>
-                  <p className="text-[11px] mt-0.5 font-mono break-all whitespace-pre-wrap text-rose-700">
+                  <p className="text-[11px] mt-0.5 whitespace-pre-wrap text-rose-700">
                     {submitError}
                   </p>
                 </div>
@@ -314,7 +337,7 @@ export const ContactView: React.FC<ContactViewProps> = ({
                     </div>
                   )}
                   <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto pt-1">
-                    Thank you for contacting MUNAJ. Your message has been sent to our Supabase customer support system and our team will attend to you promptly.
+                    Thank you for contacting MUNAJ. Your message has been sent to our customer care team and we will attend to you promptly.
                   </p>
                 </div>
 
