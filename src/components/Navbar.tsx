@@ -419,16 +419,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="pt-3 border-t border-neutral-100 flex flex-col gap-2">
-            <button
-              onClick={() => {
-                setCurrentTab('admin');
-                setMobileMenuOpen(false);
-              }}
-              className="w-full bg-[#FFF6E9] hover:bg-[#FFEBC7] text-[#3A2B1E] border border-[#F2DFC1] py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2"
-            >
-              <Shield className="w-4 h-4 text-[#FF9A3D]" /> Admin Portal
-            </button>
-
             {user ? (
               <button
                 onClick={() => {

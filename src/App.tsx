@@ -191,8 +191,8 @@ const MunajApp: React.FC = () => {
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         settings={settings}
-        openAuthModal={() => {
-          setAuthDefaultMode('login');
+        openAuthModal={(tab) => {
+          setAuthDefaultMode(tab === 'signup' ? 'register' : 'login');
           setIsAuthModalOpen(true);
         }}
       />

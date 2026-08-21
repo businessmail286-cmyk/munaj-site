@@ -181,26 +181,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     });
 
+    if (error) {
+      return { error };
+    }
+
     if (data.user) {
-      // Create profile row immediately
+      // Create/update profile row immediately
+      const newProfileData: Profile = {
+        id: data.user.id,
+        full_name: fullName,
+        email: email,
+        phone: phone || null,
+        avatar_url: null,
+        role: 'customer',
+        status: 'active',
+        created_at: new Date().toISOString(),
+      };
+
       try {
-        await supabase.from('profiles').upsert({
-          id: data.user.id,
-          full_name: fullName,
-          email: email,
-          phone: phone || null,
-          avatar_url: null,
-          role: 'customer',
-          status: 'active',
-          created_at: new Date().toISOString(),
-        });
+        await supabase.from('profiles').upsert(newProfileData);
       } catch (e) {
         console.warn('Could not insert profile upon registration:', e);
       }
-      await syncProfile(data.user);
+
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.user);
+        await syncProfile(data.user);
+      } else {
+        // If Supabase didn't immediately establish session in signUp,
+        // automatically log in with the credentials so customer enters immediately without email verification
+        try {
+          const signInRes = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (signInRes.data?.session) {
+            setSession(signInRes.data.session);
+            setUser(signInRes.data.user);
+            await syncProfile(signInRes.data.user);
+          } else {
+            setUser(data.user);
+            setProfile(newProfileData);
+          }
+        } catch {
+          setUser(data.user);
+          setProfile(newProfileData);
+        }
+      }
     }
 
-    return { error };
+    return { error: null };
   };
 
   const signOut = async () => {
